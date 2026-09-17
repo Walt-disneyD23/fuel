@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0917d · a fuel log, not a diet app.
+  Fuel · build 0917e · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -35,12 +35,14 @@ html.dark {
   --shadow:none;
 }
 html, body { margin:0; padding:0; }
-html { background:var(--page); }
+html { background:var(--page); height:100%; }
 body {
   background:var(--page); color:var(--ink); font-family:var(--fb); -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
-  padding: env(safe-area-inset-top) 0 calc(124px + env(safe-area-inset-bottom));
-  min-height:100vh; box-sizing:border-box;
+  padding:0; height:100%; overflow:hidden;
 }
+#shell { position:fixed; top:env(safe-area-inset-top); left:0; right:0; bottom:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+  padding-bottom:calc(124px + env(safe-area-inset-bottom)); scrollbar-width:none; }
+#shell::-webkit-scrollbar { display:none; }
 button, input { font-family:inherit; color:inherit; }
 button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
 body, input { touch-action:manipulation; }
@@ -189,6 +191,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 <body>
 
 <!-- ============ TODAY: the tally, then the spine ============ -->
+<div id="shell">
 <main id="v-home">
   <section class="card" id="tally"></section>
   <div class="spinehead"><span class="title">Today</span><span class="sub" id="spinesub"></span></div>
@@ -197,7 +200,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <!-- ============ ADD: the doors ============ -->
 <main id="v-add" hidden>
-  <div class="head"><span class="title">Add</span><span class="sub">laziest first</span></div>
+  <div class="head"><span class="title">Add</span></div>
   <button class="door" id="door-type"><span><span class="dt">Type it</span><span class="dd" style="display:block">Protein, carbs, fat. Calories auto or your own. Name it to keep it.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
   <div class="sect" id="repeat-head">Repeat</div>
   <div id="repeat"></div>
@@ -230,6 +233,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
     <b>The clock is the meal.</b> Every entry keeps the time it was eaten. There are no meal names.
   </section>
 </main>
+</div>
 
 <nav class="bar">
   <button id="nav-home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h6M4 7h12M4 17h9"/><circle cx="18" cy="16" r="3"/></svg>Today</button>
@@ -240,7 +244,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0917d", BUILD_DATE = "Sep 17, 2026";
+const BUILD = "0917e", BUILD_DATE = "Sep 17, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -311,7 +315,7 @@ mq.addEventListener("change", applyTheme);
 /* ================= views ================= */
 const VIEWS = ["home", "add", "sheet", "settings"];
 let view = "home";
-function show(v) { view = v; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
+function show(v) { view = v; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); $("shell").scrollTop = 0; if (v === "home") renderHome(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
 $("nav-home").onclick = () => show("home"); $("nav-add").onclick = () => show("add"); $("nav-settings").onclick = () => show("settings");
 let toastT; function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1800); }
 
