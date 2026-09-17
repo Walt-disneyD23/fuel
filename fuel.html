@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0917b · a fuel log, not a diet app.
+  Fuel · build 0917c · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -42,7 +42,8 @@ body {
   min-height:100vh; box-sizing:border-box;
 }
 button, input { font-family:inherit; color:inherit; }
-button { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+body, input { touch-action:manipulation; }
 input[type=number] { -moz-appearance:textfield; } input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
 main { padding:14px 16px 0; max-width:520px; margin:0 auto; }
 main[hidden] { display:none; }
@@ -76,12 +77,12 @@ main[hidden] { display:none; }
 .spinehead .sub { font-size:15px; color:var(--ink2); font-weight:500; }
 .list { position:relative; margin-left:22px; }
 .rail { position:absolute; left:-14px; top:8px; bottom:8px; width:2px; background:var(--rail); border-radius:2px; }
-.e { position:relative; background:var(--card); border-radius:18px; padding:12px 14px; box-shadow:var(--shadow); box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; width:100%; border:0; text-align:left; height:96px; }
+.e { position:relative; background:var(--card); border-radius:18px; padding:12px 14px; box-shadow:var(--shadow); box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; width:100%; border:0; text-align:left; min-height:96px; }
 .e::before { content:""; position:absolute; left:-18px; top:18px; width:10px; height:10px; border-radius:50%; background:var(--card); border:2px solid var(--rail); box-sizing:border-box; }
 .e .r1 { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
 .e .when { font-size:13px; color:var(--ink2); font-weight:500; }
 .e .when span { margin-left:8px; }
-.e .name { font-size:16px; font-weight:600; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.e .ename { font-size:16px; font-weight:600; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .e .k { font-family:var(--fd); font-size:18px; font-weight:700; letter-spacing:-.01em; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .e .k span { font-family:var(--fb); font-size:12px; font-weight:600; color:var(--ink2); margin-left:3px; }
 .e .bar { display:flex; height:6px; border-radius:4px; overflow:hidden; background:var(--track); margin-top:10px; }
@@ -98,14 +99,15 @@ main[hidden] { display:none; }
 
 /* ---------- Add ---------- */
 .head { display:flex; align-items:center; gap:12px; margin:4px 4px 16px; }
-.head .back { width:36px; height:36px; border-radius:50%; background:var(--card); border:0; display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--ink2); box-shadow:var(--shadow); }
+.head .back { width:40px; height:40px; border-radius:50%; background:var(--card); border:0; display:flex; align-items:center; justify-content:center; color:var(--ink); box-shadow:var(--shadow); }
 .head .title { font-family:var(--fd); font-size:22px; font-weight:700; letter-spacing:-.01em; }
 .head .sub { font-size:13px; color:var(--ink2); font-weight:500; margin-left:auto; }
 .door { display:flex; align-items:center; justify-content:space-between; width:100%; border:0; background:var(--card); border-radius:20px; padding:18px 20px; box-shadow:var(--shadow); text-align:left; }
 .door + .door { margin-top:10px; }
 .door .dt { font-size:17px; font-weight:600; }
 .door .dd { font-size:13px; color:var(--ink2); margin-top:3px; }
-.door .chev { font-size:22px; color:var(--ink2); }
+.statusband { position:fixed; left:0; right:0; top:0; height:env(safe-area-inset-top); background:var(--page); z-index:5; }
+.door .chev { display:flex; color:var(--ink2); flex:0 0 auto; margin-left:12px; }
 .sect { font-size:13px; color:var(--ink2); font-weight:500; margin:22px 4px 8px; }
 .pi { display:flex; align-items:center; justify-content:space-between; width:100%; border:0; background:var(--card); border-radius:16px; padding:14px 16px; box-shadow:var(--shadow); text-align:left; }
 .pi + .pi { margin-top:8px; }
@@ -134,7 +136,10 @@ main[hidden] { display:none; }
 .per .rowhead { display:flex; justify-content:space-between; font-size:13px; color:var(--ink2); font-weight:500; margin-bottom:6px; }
 .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .grid + .grid { margin-top:8px; }
-.cell { background:var(--field); border-radius:10px; padding:8px 10px; min-width:0; }
+.cell { background:var(--field); border-radius:10px; padding:8px 10px; min-width:0; box-shadow:0 0 0 2px transparent; transition:box-shadow .12s; }
+.cell:focus-within { box-shadow:0 0 0 2px var(--acc); }
+input:focus, button:focus { outline:none; }
+input.name:focus, .ate input:focus, .row input.num:focus { box-shadow:0 0 0 2px var(--acc); }
 .cell .l { font-size:12px; color:var(--ink2); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cell .x { display:flex; align-items:baseline; }
 .cell .x input { width:100%; min-width:0; border:0; background:transparent; padding:0; font:700 16px var(--fd); letter-spacing:-.01em; font-variant-numeric:tabular-nums; color:var(--ink); }
@@ -185,6 +190,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 <body>
 
 <!-- ============ TODAY: the tally, then the spine ============ -->
+<div class="statusband" aria-hidden="true"></div>
 <main id="v-home">
   <section class="card" id="tally"></section>
   <div class="spinehead"><span class="title">Today</span><span class="sub" id="spinesub"></span></div>
@@ -194,14 +200,14 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 <!-- ============ ADD: the doors ============ -->
 <main id="v-add" hidden>
   <div class="head"><span class="title">Add</span><span class="sub">laziest first</span></div>
-  <button class="door" id="door-type"><span><span class="dt">Type it</span><span class="dd" style="display:block">Protein, carbs, fat. Calories auto or your own. Name it to keep it.</span></span><span class="chev">›</span></button>
+  <button class="door" id="door-type"><span><span class="dt">Type it</span><span class="dd" style="display:block">Protein, carbs, fat. Calories auto or your own. Name it to keep it.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
   <div class="sect" id="repeat-head">Repeat</div>
   <div id="repeat"></div>
 </main>
 
 <!-- ============ the entry sheet ============ -->
 <main id="v-sheet" hidden>
-  <div class="head"><button class="back" id="sheet-back" aria-label="Back">‹</button><span class="title" id="sheet-title">Type it</span><span class="sub" id="sheet-sub">entered</span></div>
+  <div class="head"><button class="back" id="sheet-back" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title" id="sheet-title">Type it</span><span class="sub" id="sheet-sub">entered</span></div>
   <section class="card" id="sheet"></section>
 </main>
 
@@ -236,7 +242,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0917b", BUILD_DATE = "Sep 17, 2026";
+const BUILD = "0917c", BUILD_DATE = "Sep 17, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -329,7 +335,7 @@ function renderHome() {
   es.forEach((e, i) => {
     if (i) { const gm = Math.round((new Date(e.t) - new Date(es[i-1].t)) / 60000); const px = Math.max(10, Math.min(72, gm / 60 * 18)); html += `<div class="gap" style="height:${px}px">${gapText(gm)}</div>`; }
     const kc = kcalFromGrams(e.p, e.c, e.f) || 1;
-    html += `<button class="e" data-id="${e.id}"><div><div class="r1"><span class="when tn">${clock(e.t)}<span>${SRC[e.src] || "entered"}${e.est ? ", calories estimated" : ""}</span></span><span class="k">${fmt(e.kcal)}<span>kcal</span></span></div><div class="name">${esc(e.name || "Untitled")}</div></div><div><div class="bar"><i class="p" style="width:${(e.p||0)*4/kc*100}%"></i><i class="c" style="width:${(e.c||0)*4/kc*100}%"></i><i class="f" style="width:${(e.f||0)*9/kc*100}%"></i></div><div class="g"><span>Protein <b>${fmt(e.p)} g</b></span><span>Carbs <b>${fmt(e.c)} g</b></span><span>Fat <b>${fmt(e.f)} g</b></span></div></div></button>`;
+    html += `<button class="e" data-id="${e.id}"><div><div class="r1"><span class="when tn">${clock(e.t)}<span>${SRC[e.src] || "entered"}${e.est ? ", calories estimated" : ""}</span></span><span class="k">${fmt(e.kcal)}<span>kcal</span></span></div><div class="ename">${esc(e.name || "Untitled")}</div></div><div><div class="bar"><i class="p" style="width:${(e.p||0)*4/kc*100}%"></i><i class="c" style="width:${(e.c||0)*4/kc*100}%"></i><i class="f" style="width:${(e.f||0)*9/kc*100}%"></i></div><div class="g"><span>Protein <b>${fmt(e.p)} g</b></span><span>Carbs <b>${fmt(e.c)} g</b></span><span>Fat <b>${fmt(e.f)} g</b></span></div></div></button>`;
   });
   const since = Math.max(0, Math.round((now - new Date(es[es.length-1].t)) / 60000));
   html += `<div class="nowrow">Now ${clock(now)}<span>${sinceText(since)}</span></div>`;
@@ -386,13 +392,13 @@ function renderSheet() {
     `<div class="herot"><div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div></div>` +
     `<div class="per"><div class="rowhead"><span>${typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(sheet.servingText)}</span><span>${editable ? "tap to change" : ""}</span></div>` +
     `<div class="grid">${cell("kcal", "Calories", "")}${cell("p", "Protein", "g")}${cell("c", "Carbs", "g")}${cell("f", "Fat", "g")}</div>` +
-    (t.est ? `<div class="fine" style="margin-top:8px">Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div>` : "") + `</div>` +
+    `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div></div>` +
     (typed ? `<div class="row" style="margin-top:16px"><span>Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
     `<div class="ate"><span>Ate at</span><span class="t"><input type="time" id="sh-time" value="${hh}:${mm}">${isNow ? `<span class="now">now</span>` : ""}</span></div>` +
     `<button class="log" id="sh-log" ${canLog ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>` +
     (sheet.mode === "edit" ? `<button class="quiet" id="sh-del">Delete this entry</button>` : "");
   $("sh-name").oninput = ev => { sheet.name = ev.target.value; const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } };
-  $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.disabled = !editable; inp.oninput = () => { sheet.per[inp.dataset.k] = inp.value; refreshTotals(); }; inp.onblur = () => renderSheet(); });
+  $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.disabled = !editable; inp.oninput = () => { sheet.per[inp.dataset.k] = inp.value; refreshTotals(); }; });
   $("sv-dn").onclick = () => { sheet.servings = Math.max(0.5, sheet.servings - 0.5); renderSheet(); };
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
   if (typed) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
@@ -400,7 +406,7 @@ function renderSheet() {
   $("sh-log").onclick = commitSheet;
   const del = $("sh-del"); if (del) del.onclick = () => { if (!confirm("Delete " + (sheet.name || "this entry") + "?")) return; S.entries = S.entries.filter(e => e.id !== sheet.entry.id); save(); toast("Deleted"); show("home"); };
 }
-function refreshTotals() { const tot = sheetTotals().tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div>`; const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
+function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div>`; const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
 function commitSheet() {
   const t = sheetTotals(), name = sheet.name.trim();
   if (sheet.mode === "edit") {
