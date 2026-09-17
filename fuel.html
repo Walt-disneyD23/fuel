@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0917h · a fuel log, not a diet app.
+  Fuel · build 0917i · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -38,11 +38,11 @@ html, body { margin:0; padding:0; }
 html { background:var(--page); }
 body {
   background:var(--page); color:var(--ink); font-family:var(--fb); -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
-  padding:0; min-height:100vh; overflow:hidden;
+  padding: env(safe-area-inset-top) 0 calc(124px + env(safe-area-inset-bottom));
+  min-height:100vh; box-sizing:border-box;
 }
-#shell { position:fixed; top:env(safe-area-inset-top); left:0; right:0; bottom:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
-  padding-bottom:calc(124px + env(safe-area-inset-bottom)); scrollbar-width:none; }
-#shell::-webkit-scrollbar { display:none; }
+html { scrollbar-width:none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display:none; }
 button, input { font-family:inherit; color:inherit; }
 button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
 body, input { touch-action:manipulation; }
@@ -255,7 +255,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0917h", BUILD_DATE = "Sep 17, 2026";
+const BUILD = "0917i", BUILD_DATE = "Sep 17, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -331,7 +331,7 @@ mq.addEventListener("change", applyTheme);
 /* ================= views ================= */
 const VIEWS = ["home", "add", "sheet", "settings"];
 let view = "home";
-function show(v) { view = v; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); $("shell").scrollTop = 0; if (v === "home") renderHome(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
+function show(v) { view = v; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
 $("nav-home").onclick = () => show("home"); $("nav-add").onclick = () => show("add"); $("nav-settings").onclick = () => show("settings");
 let toastT; function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1800); }
 
