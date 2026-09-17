@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0917i · a fuel log, not a diet app.
+  Fuel · build 0917j · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -123,6 +123,27 @@ main[hidden] { display:none; }
 .pi .ps { font-size:13px; color:var(--ink2); margin-top:2px; }
 .pi .pk { font-family:var(--fd); font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .pi .pk span { font-family:var(--fb); font-size:12px; font-weight:600; color:var(--ink2); margin-left:3px; }
+/* build a plate — the picker's rows, from fuel-dish-mock.html (ruled B) */
+.pi.pick > span:first-child { flex:1; min-width:0; }
+.pi .plus { width:40px; height:40px; border:0; padding:0; border-radius:13px; background:var(--field); color:var(--ink); display:flex; align-items:center; justify-content:center; font:600 24px var(--fd); margin-left:12px; flex:0 0 auto; }
+.pi.on .plus { background:var(--acc); color:var(--onacc); }
+.pi.on { display:grid; grid-template-columns:minmax(0,1fr) 78px; column-gap:12px; box-sizing:border-box; }
+.pi.on .amt { display:grid; grid-template-columns:34px 34px; gap:10px; }
+.pi.on .amt .plus { margin:0; width:34px; height:34px; border-radius:11px; }
+.pi.on .amt .plus.mn { background:var(--field); color:var(--ink); font-size:20px; }
+.pi.on .amt .plus:disabled { opacity:.35; }
+.pi .pt { border:0; background:transparent; padding:0; margin:0; text-align:left; min-width:0; font:inherit; color:inherit; }
+.iname { font-family:var(--fd); font-size:22px; font-weight:700; letter-spacing:-.01em; line-height:1.15; }
+.built { display:block; width:100%; border:0; border-top:1px solid var(--line); background:transparent; margin-top:14px; padding:12px 0 0; text-align:left; font:500 14px var(--fb); color:var(--ink2); line-height:1.45; }
+.built span { color:var(--ink); font-weight:600; }
+#ings { margin-top:8px; }
+.ing { display:grid; grid-template-columns:minmax(0,1fr) 138px 56px; align-items:center; column-gap:10px; padding:11px 0; border-top:1px solid var(--line); }
+.ing:first-of-type { border-top:0; }
+.ing .in { font-size:15px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ing .is { font-size:12px; color:var(--ink2); margin-top:1px; }
+.ing .ia { font-family:var(--fd); font-weight:700; font-size:14px; text-align:center; font-variant-numeric:tabular-nums; }
+.ing .ik { font-family:var(--fd); font-weight:700; font-size:14px; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink2); }
+.ing .ik i { font:600 11px var(--fb); color:var(--ink2); font-style:normal; margin-left:2px; }
 
 /* the entry sheet (Add B, refined D2) */
 .name { width:100%; box-sizing:border-box; border:0; border-radius:12px; background:var(--field); padding:12px 14px; font:600 17px var(--fb); color:var(--ink); }
@@ -207,11 +228,12 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <!-- ============ ADD: the doors ============ -->
 <main id="v-add" hidden>
-  <div class="head"><span class="title">Add</span></div>
+  <div class="head" id="add-head"><span class="title">Add</span></div>
   <label class="find"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="find" type="search" placeholder="Find a food" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></label>
   <div id="results" hidden></div>
   <div id="add-body">
   <button class="door" id="door-type"><span><span class="dt">Type it</span><span class="dd" style="display:block">Protein, carbs, fat. Calories auto or your own. Name it to keep it.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
+  <button class="door" id="door-plate"><span><span class="dt">Build a plate</span><span class="dd" style="display:block">Find each ingredient, tap +. Fuel adds it up and keeps the plate.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
   <div class="sect" id="repeat-head">Repeat</div>
   <div id="repeat"></div>
   </div>
@@ -255,7 +277,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0917i", BUILD_DATE = "Sep 17, 2026";
+const BUILD = "0917j", BUILD_DATE = "Sep 17, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -296,6 +318,42 @@ function repeatOrder(pantry, now) {
 }
 function scale(per, servings) { return { kcal: Math.round((+per.kcal||0) * servings), p: r1((+per.p||0) * servings), c: r1((+per.c||0) * servings), f: r1((+per.f||0) * servings) }; }
 function stepText(n) { const w = Math.floor(n), h = n - w >= 0.5; return (w ? w : "") + (h ? "½" : "") || "0"; }
+/* THE PLATE IS ARITHMETIC: rows in, sums out. Amounts are written in the food's own measure; a row is the plate's own copy. */
+function qtyText(n) { const e = Math.round(n * 8); if (Math.abs(n * 8 - e) < 1e-6) { const w = Math.floor(e / 8), f = e % 8; return (w ? w : "") + (f ? ["", "⅛", "¼", "⅜", "½", "⅝", "¾", "⅞"][f] : "") || "0"; } return String(r1(n)); }
+function measureParts(serving) { const m = String(serving || "serving").trim().match(/^(\d+(?:\.\d+)?)?\s*([¼½¾⅛⅜⅝⅞])?\s*([\s\S]*)$/), fr = { "⅛": .125, "¼": .25, "⅜": .375, "½": .5, "⅝": .625, "¾": .75, "⅞": .875 }; const q = (m[1] ? +m[1] : 0) + (m[2] ? fr[m[2]] : 0); return { q: q || 1, rest: m[3] }; }
+function amountParts(serving, amount) {
+  const mp = measureParts(serving), total = mp.q * amount; let rest = mp.rest;
+  if (amount === 1) return { n: qtyText(total), u: rest };
+  rest = rest.replace(/\s*\(\d+ [a-z]+\)/i, "");                                      // "(23 almonds)" is a count of one measure; "(6")" is a size and stays
+  if (!/(^| )of /.test(rest)) {
+    const many = { cup: "cups", slice: "slices", spear: "spears", egg: "eggs", thigh: "thighs", chop: "chops", can: "cans", stalk: "stalks", ear: "ears", fruit: "fruits", avocado: "avocados", cucumber: "cucumbers", serving: "servings", scoop: "scoops", piece: "pieces", bar: "bars" };
+    const cut = rest.search(/[,(]/), head = (cut < 0 ? rest : rest.slice(0, cut)).replace(/\s+$/, ""), tail = rest.slice(head.length), sp = head.lastIndexOf(" "), word = head.slice(sp + 1), lw = word.toLowerCase();
+    let bent = word; if (total > 1 && many[lw]) bent = many[lw]; if (total <= 1) { for (const k in many) if (many[k] === lw) bent = k; }
+    rest = head.slice(0, sp + 1) + bent + tail;
+  }
+  return { n: qtyText(total), u: rest };
+}
+function amountText(serving, amount) { const a = amountParts(serving, amount); return a.u ? a.n + " " + a.u : a.n; }
+function amountFromExact(serving, typed) { const n = +typed; if (typed === "" || typed == null || !isFinite(n) || n <= 0) return null; return n / measureParts(serving).q; }
+function plateStep(amount, dir) { if (dir < 0) return amount <= 0.5 ? amount : Math.max(0.5, Math.ceil(amount * 2 - 1e-9) / 2 - 0.5); return Math.min(40, Math.floor(amount * 2 + 1e-9) / 2 + 0.5); }
+function plateRow(item, amount) { const x = item.per.x || {}, num = v => v === "" || v == null || isNaN(+v) ? null : +v; return { itemId: item.id, name: item.name, amount: amount, unit: item.serving || "serving", src: item.src || "typed", per: { kcal: +item.per.kcal || 0, p: +item.per.p || 0, c: +item.per.c || 0, f: +item.per.f || 0, x: { fiber: num(x.fiber), sugar: num(x.sugar), sodium: num(x.sodium), satfat: num(x.satfat) } } }; }
+function plateTotals(rows) {
+  const t = { kcal: 0, p: 0, c: 0, f: 0, x: { fiber: null, sugar: null, sodium: null, satfat: null }, n: rows.length };
+  for (const r of rows) { const s = scale(r.per, r.amount); t.kcal += s.kcal; t.p += s.p; t.c += s.c; t.f += s.f; for (const k in t.x) { const v = r.per.x ? r.per.x[k] : null; if (v != null) t.x[k] = (t.x[k] || 0) + r1(v * r.amount); } }
+  t.p = r1(t.p); t.c = r1(t.c); t.f = r1(t.f); for (const k in t.x) if (t.x[k] != null) t.x[k] = r1(t.x[k]);
+  return t;
+}
+function plateBasis(rows, makes) { const t = plateTotals(rows), m = Math.max(1, +makes || 1), x = {}; for (const k in t.x) x[k] = t.x[k] == null ? null : t.x[k] / m; return { kcal: t.kcal / m, p: t.p / m, c: t.c / m, f: t.f / m, x: x }; }
+function platePer(rows, makes) { const b = plateBasis(rows, makes), x = {}; for (const k in b.x) x[k] = b.x[k] == null ? null : r1(b.x[k]); return { kcal: Math.round(b.kcal), p: r1(b.p), c: r1(b.c), f: r1(b.f), x: x }; }
+function plateServing(makes, count) { return (makes > 1 ? "1 of " + makes + " servings" : "1 serving") + ", a plate of " + count; }
+function plateHead(rows) { return rows.length ? rows.length + " in, " + fmt(plateTotals(rows).kcal) + " kcal" : "nothing in yet"; }
+function builtLine(rows) {
+  const n = rows.length, u = rows.filter(r => r.src === "usda").length, y = n - u, lead = "Built from " + n + (n === 1 ? " ingredient, " : " ingredients, ");
+  if (n === 1) return lead + (u ? "a USDA estimate." : "one of yours.");
+  if (!y) return lead + (n === 2 ? "both" : "all") + " USDA estimates.";
+  if (!u) return lead + (n === 2 ? "both" : "all") + " yours.";
+  return lead + u + (u === 1 ? " USDA estimate" : " USDA estimates") + " and " + y + " of yours.";
+}
 /* @fuel:pure:end */
 
 /* ================= the starter pantry — USDA SR28 via fuel-pantry-seed.json; change both together ================= */
@@ -321,7 +379,7 @@ function save() { store.set(KEY, S); }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[ch]));
-const SRC = { pantry: "from the pantry", label: "read from the label", typed: "entered", usda: "USDA estimate" };
+const SRC = { pantry: "from the pantry", label: "read from the label", typed: "entered", usda: "USDA estimate", plate: "built from ingredients" };
 
 /* ================= theme ================= */
 const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -363,12 +421,13 @@ function renderHome() {
 
 /* ================= add: the doors ================= */
 function renderAdd() {
+  renderAddHead();
   const now = new Date(), yk = dayKey(new Date(now - 86400000));
   const pantry = repeatOrder(S.pantry, now);
   const yest = S.entries.filter(e => dayKey(e.t) === yk).sort((a, b) => new Date(a.t) - new Date(b.t));
   let html = "";
   if (!pantry.length && !yest.length) html = `<p class="fine" style="margin:0 4px">Nothing to repeat yet. Name what you type and it lands here; yesterday's entries show here too.</p>`;
-  pantry.forEach(p => { html += `<button class="pi" data-p="${p.id}"><span><span class="pn">${esc(p.name)}</span><span class="ps" style="display:block">per ${esc(p.serving || "serving")}, ${SRC[p.src] || "entered"}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`; });
+  pantry.forEach(p => { html += `<button class="pi" data-p="${p.id}"><span><span class="pn">${esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`; });
   if (yest.length) { html += `<div class="sect">Yesterday</div>`; yest.forEach(e => { html += `<button class="pi" data-y="${e.id}"><span><span class="pn">${esc(e.name || "Untitled")}</span><span class="ps" style="display:block">${clock(e.t)} yesterday, ${SRC[e.src] || "entered"}</span></span><span class="pk tn">${fmt(e.kcal)}<span>kcal</span></span></button>`; }); }
   $("repeat").innerHTML = html;
   $("repeat").querySelectorAll("[data-p]").forEach(b => b.onclick = () => openSheet({ mode: "pantry", item: S.pantry.find(p => p.id === b.dataset.p) }));
@@ -377,12 +436,13 @@ function renderAdd() {
 }
 function markHit(name, q) { const i = name.toLowerCase().indexOf(q); return i < 0 ? esc(name) : esc(name.slice(0, i)) + "<b>" + esc(name.slice(i, i + q.length)) + "</b>" + esc(name.slice(i + q.length)); }
 function renderFind() {
+  if (plate) return renderPicker();
   const q = ($("find").value || "").trim().toLowerCase(); const R = $("results");
   if (!q) { R.hidden = true; R.innerHTML = ""; $("add-body").hidden = false; return; }
   $("add-body").hidden = true; R.hidden = false;
   const hit = p => p.name.toLowerCase().includes(q);
   const mine = S.pantry.filter(hit), have = new Set(S.pantry.map(p => p.id)), starter = STARTER.filter(p => !have.has(p.id) && hit(p));
-  const card = (p, attr) => `<button class="pi" ${attr}="${p.id}"><span><span class="pn">${markHit(p.name, q)}</span><span class="ps" style="display:block">per ${esc(p.serving)}, ${SRC[p.src] || "entered"}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`;
+  const card = (p, attr) => `<button class="pi" ${attr}="${p.id}"><span><span class="pn">${markHit(p.name, q)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`;
   let html = "";
   if (mine.length) html += `<div class="sect">Yours</div>` + mine.map(p => card(p, "data-p")).join("");
   if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(p => card(p, "data-s")).join("");
@@ -393,7 +453,83 @@ function renderFind() {
 }
 $("find").oninput = renderFind;
 $("door-type").onclick = () => openSheet({ mode: "typed" });
-$("sheet-back").onclick = () => show(sheet && sheet.mode === "edit" ? "home" : "add");
+$("sheet-back").onclick = () => sheetBack();
+
+/* ================= build a plate (ruled B: stay in the picker) ================= */
+let plate = null;                                   // { rows, makes, name, scrollY }; lives until the plate is logged or left
+function findItem(id) { return S.pantry.find(p => p.id === id) || STARTER.find(p => p.id === id); }
+function subLine(p) { return "per " + esc(p.serving || "serving") + (p.plate ? "" : ", " + (SRC[p.src] || "entered")); }
+function rowSub(r) { return amountText(r.unit, r.amount) + ", " + fmt(scale(r.per, r.amount).kcal) + " kcal"; }
+function renderAddHead() {
+  $("add-head").innerHTML = plate ? `<button class="back" id="plate-back" aria-label="Back">${$("sheet-back").innerHTML}</button><span class="title">Build a plate</span><span class="sub" id="plate-sub">${plateHead(plate.rows)}</span>` : `<span class="title">Add</span>`;
+  $("find").placeholder = plate ? "Find an ingredient" : "Find a food";
+  const b = $("plate-back"); if (b) b.onclick = leavePlate;
+}
+function leavePlate() {
+  const n = plate.rows.length;
+  if (n && !confirm("Leave this plate? The " + n + (n === 1 ? " ingredient" : " ingredients") + " in it will be cleared.")) return;
+  plate = null; $("find").value = ""; show("add");
+}
+function renderPicker() {
+  const q = ($("find").value || "").trim().toLowerCase(), R = $("results");
+  $("add-body").hidden = true; R.hidden = false;
+  const inIds = new Set(plate.rows.map(r => r.itemId)), hit = p => !inIds.has(p.id) && (!q || p.name.toLowerCase().includes(q));
+  const mine = (q ? S.pantry : repeatOrder(S.pantry, new Date())).filter(hit), have = new Set(S.pantry.map(p => p.id)), starter = q ? STARTER.filter(p => !have.has(p.id) && hit(p)) : [];
+  const card = p => `<button class="pi pick" data-add="${p.id}"><span><span class="pn">${q ? markHit(p.name, q) : esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span><span class="plus" aria-hidden="true">+</span></button>`;
+  let html = "";
+  if (mine.length) html += `<div class="sect">Yours</div>` + mine.map(card).join("");
+  if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(card).join("");
+  if (!mine.length && !starter.length) html += `<p class="fine" style="margin:14px 4px 0">${q ? "Nothing called that yet. Type it and name it first, and it can go in a plate." : (plate.rows.length ? "Find the next ingredient, or you're done." : "Find each ingredient by name and tap +. Fuel adds the plate up.")}</p>`;
+  if (plate.rows.length) html += `<div class="sect">In the plate</div>` + plate.rows.map((r, i) => `<div class="pi on"><button class="pt" data-open="${i}"><span class="pn" style="display:block">${esc(r.name)}</span><span class="ps" style="display:block" id="rs-${i}">${rowSub(r)}</span></button><span class="amt"><button class="plus mn" data-dn="${i}" aria-label="Less" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><button class="plus" data-up="${i}" aria-label="More">+</button></span></div>`).join("");
+  html += `<button class="log" id="plate-done" style="margin-top:18px" ${plate.rows.length ? "" : "disabled"}>${plate.rows.length ? "Done, " + plate.rows.length + " in" : "Done"}</button>`;
+  R.innerHTML = html;
+  R.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { plate.rows.unshift(plateRow(findItem(b.dataset.add), 1)); $("find").value = ""; renderAddHead(); renderPicker(); });
+  R.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openIng(+b.dataset.open));
+  const nudge = (i, dir) => { const r = plate.rows[i]; r.amount = plateStep(r.amount, dir); $("rs-" + i).textContent = rowSub(r); $("plate-sub").textContent = plateHead(plate.rows); R.querySelector(`[data-dn="${i}"]`).disabled = r.amount <= 0.5; };   // in place: nothing redraws under the finger
+  R.querySelectorAll("[data-dn]").forEach(b => b.onclick = () => nudge(+b.dataset.dn, -1));
+  R.querySelectorAll("[data-up]").forEach(b => b.onclick = () => nudge(+b.dataset.up, 1));
+  $("plate-done").onclick = () => openSheet({ mode: "plate" });
+}
+function openIng(i) {
+  plate.scrollY = window.scrollY || 0;
+  sheet = { mode: "ing", idx: i, row: plate.rows[i] };
+  $("sheet-title").textContent = "In the plate"; $("sheet-sub").textContent = SRC[sheet.row.src] || "entered";
+  show("sheet"); renderIng();
+}
+function renderIng() {
+  const r = sheet.row, a = amountParts(r.unit, r.amount), t = scale(r.per, r.amount), x = r.per.x || {};
+  const cell = (label, v, unit) => `<div class="cell"><div class="l">${label}</div><div class="x"><input disabled value="${v == null ? "" : v}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
+  $("sheet").innerHTML =
+    `<div class="iname">${esc(r.name)}</div>` +
+    `<div class="step"><button id="ig-dn" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><div class="val"><div class="n" id="ig-n">${a.n}</div><div class="u" id="ig-u">${esc(a.u)} in the plate</div></div><button id="ig-up">+</button></div>` +
+    `<div class="ate"><span>Exact amount</span><span class="t"><input type="number" inputmode="decimal" id="ig-exact" style="width:92px;text-align:right" placeholder="${r1(measureParts(r.unit).q * r.amount)}"><span class="now" id="ig-xu">${esc(a.u)}</span></span></div>` +
+    `<div class="herot" id="ig-hero"><div class="big tn">${fmt(t.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(t.p)} g</b><br>Carbs <b>${fmt(t.c)} g</b><br>Fat <b>${fmt(t.f)} g</b></div></div>` +
+    `<div class="per"><div class="rowhead"><span>${SRC[r.src] || "entered"}, per ${esc(r.unit)}</span><span></span></div>` +
+    `<div class="grid">${cell("Calories", r.per.kcal, "")}${cell("Protein", r.per.p, "g")}${cell("Carbs", r.per.c, "g")}${cell("Fat", r.per.f, "g")}</div><div class="grid">${cell("Fiber", x.fiber, "g")}${cell("Sugar", x.sugar, "g")}${cell("Sodium", x.sodium, "mg")}${cell("Sat. fat", x.satfat, "g")}</div></div>` +
+    `<button class="log" id="ig-back">Back to the plate</button><button class="quiet" id="ig-rm">Remove from the plate</button>`;
+  $("ig-dn").onclick = () => { r.amount = plateStep(r.amount, -1); renderIng(); };
+  $("ig-up").onclick = () => { r.amount = plateStep(r.amount, 1); renderIng(); };
+  $("ig-exact").oninput = ev => {                                                       // in place: the field keeps its focus
+    const am = amountFromExact(r.unit, ev.target.value); if (am == null) return; r.amount = Math.min(40, am);
+    const p = amountParts(r.unit, r.amount), s = scale(r.per, r.amount);
+    $("ig-n").textContent = p.n; $("ig-u").textContent = p.u + " in the plate"; $("ig-xu").textContent = p.u; $("ig-dn").disabled = r.amount <= 0.5;
+    $("ig-hero").innerHTML = `<div class="big tn">${fmt(s.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(s.p)} g</b><br>Carbs <b>${fmt(s.c)} g</b><br>Fat <b>${fmt(s.f)} g</b></div>`;
+  };
+  $("ig-back").onclick = sheetBack;
+  $("ig-rm").onclick = () => { plate.rows.splice(sheet.idx, 1); sheetBack(); };
+}
+function sheetBack() {
+  if (sheet && sheet.mode === "edit") return show("home");
+  if (sheet && sheet.mode === "plate" && plate) { plate.makes = sheet.makes; plate.name = sheet.name; }
+  const y = sheet && sheet.mode === "ing" && plate ? plate.scrollY : 0;
+  show("add"); if (y) window.scrollTo(0, y);
+}
+function builtHtml(rows) {
+  if (!rows || !rows.length) return "";
+  return `<button class="built" id="built">${builtLine(rows)} <span>${sheet.showIngs ? "Tap to hide them." : "Tap to see them."}</span></button><div id="ings" ${sheet.showIngs ? "" : "hidden"}>` +
+    rows.map(r => `<div class="ing"><div><div class="in">${esc(r.name)}</div><div class="is">${r.src === "usda" ? "USDA estimate" : "yours"}</div></div><div class="ia">${amountText(r.unit, r.amount)}</div><div class="ik tn">${fmt(scale(r.per, r.amount).kcal)}<i>kcal</i></div></div>`).join("") + `</div>`;
+}
+$("door-plate").onclick = () => { plate = plate || { rows: [], makes: 1, name: "", scrollY: 0 }; $("find").value = ""; show("add"); };
 
 /* ================= the entry sheet ================= */
 let sheet = null;
@@ -404,11 +540,13 @@ function openSheet(o) {
   if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
   if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
   if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; }
-  $("sheet-title").textContent = o.mode === "pantry" && sheet.src === "usda" && !S.pantry.some(p => p.id === o.item.id) ? "Starter pantry" : { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit" }[o.mode];
-  $("sheet-sub").textContent = o.mode === "typed" ? "entered" : (SRC[sheet.src] || "entered");
+  if (o.mode === "plate") { const pt = plateTotals(plate.rows); sheet.src = "plate"; sheet.rows = plate.rows; sheet.makes = plate.makes || 1; sheet.name = plate.name || ""; sheet.per = { kcal: pt.kcal, p: pt.p, c: pt.c, f: pt.f }; sheet.servingText = plateServing(sheet.makes, plate.rows.length); }
+  $("sheet-title").textContent = o.mode === "pantry" && sheet.src === "usda" && !S.pantry.some(p => p.id === o.item.id) ? "Starter pantry" : { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit", plate: "Build a plate" }[o.mode];
+  $("sheet-sub").textContent = o.mode === "typed" ? "entered" : o.mode === "plate" ? plateHead(plate.rows) : (SRC[sheet.src] || "entered");
   show("sheet"); renderSheet();
 }
 function sheetTotals() {
+  if (sheet.mode === "plate") { const basis = plateBasis(sheet.rows, sheet.makes), tot = scale(basis, sheet.servings); tot.x = {}; for (const k in basis.x) tot.x[k] = basis.x[k] == null ? null : r1(basis.x[k] * sheet.servings); return { est: false, basis, tot }; }
   const per = sheet.per, p = +per.p || 0, c = +per.c || 0, f = +per.f || 0;
   const kcalTyped = per.kcal !== "" && per.kcal != null && !isNaN(+per.kcal);
   const perK = kcalTyped ? +per.kcal : kcalFromGrams(p, c, f);
@@ -420,19 +558,20 @@ function sheetTotals() {
   return { est, basis, tot };
 }
 function renderSheet() {
-  const t = sheetTotals(), tot = t.tot, typed = sheet.mode === "typed", editable = typed || sheet.mode === "edit" && !sheet.entry.per, isNow = Math.abs(sheet.at - sheet.openedAt) < 60000 && sheet.mode !== "edit";
+  const t = sheetTotals(), tot = t.tot, typed = sheet.mode === "typed", isPlate = sheet.mode === "plate", whole = typed || isPlate, prow = isPlate ? sheet.rows : (sheet.item && sheet.item.plate) || null, editable = typed || sheet.mode === "edit" && !sheet.entry.per, isNow = Math.abs(sheet.at - sheet.openedAt) < 60000 && sheet.mode !== "edit";
   const cell = (k, label, unit) => `<div class="cell${k === "kcal" && t.est ? " est" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
   const canLog = (+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0;
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
-    `<input class="name" id="sh-name" value="${esc(sheet.name)}" placeholder="${typed ? "Name it to keep it in the pantry" : "Name"}">` +
-    (typed ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>What you typed makes</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button></span></div>` : "") +
-    `<div class="step"><button id="sv-dn" ${sheet.servings <= 0.5 ? "disabled" : ""}>−</button><div class="val"><div class="n">${stepText(sheet.servings)}</div><div class="u">${sheet.servings === 1 ? "serving" : "servings"}${typed ? " eaten" : ", " + esc(sheet.servingText) + " each"}</div></div><button id="sv-up">+</button></div>` +
+    `<input class="name" id="sh-name" value="${esc(sheet.name)}" placeholder="${whole ? "Name it to keep it in the pantry" : "Name"}">` +
+    (whole ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button></span></div>` : "") +
+    `<div class="step"><button id="sv-dn" ${sheet.servings <= 0.5 ? "disabled" : ""}>−</button><div class="val"><div class="n">${stepText(sheet.servings)}</div><div class="u">${sheet.servings === 1 ? "serving" : "servings"}${whole ? " eaten" : ", " + esc(sheet.servingText) + " each"}</div></div><button id="sv-up">+</button></div>` +
     `<div class="herot"><div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div></div>` +
-    `<div class="per"><div class="rowhead"><span>${typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(sheet.servingText)}</span><span>${editable ? "tap to change" : ""}</span></div>` +
+    builtHtml(prow) +
+    (isPlate ? "" : `<div class="per"><div class="rowhead"><span>${typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(sheet.servingText)}</span><span>${editable ? "tap to change" : ""}</span></div>` +
     `<div class="grid">${cell("kcal", "Calories", "")}${cell("p", "Protein", "g")}${cell("c", "Carbs", "g")}${cell("f", "Fat", "g")}</div><div class="grid">${cell("fiber", "Fiber", "g")}${cell("sugar", "Sugar", "g")}${cell("sodium", "Sodium", "mg")}${cell("satfat", "Sat. fat", "g")}</div>` +
-    `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div></div>` +
-    (typed ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
+    `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div></div>`) +
+    (whole ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
     `<div class="ate"><span>Ate at</span><span class="t"><input type="time" id="sh-time" value="${hh}:${mm}">${isNow ? `<span class="now">now</span>` : ""}</span></div>` +
     `<button class="log" id="sh-log" ${canLog ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>` +
     (sheet.mode === "edit" ? `<button class="quiet" id="sh-del">Delete this entry</button>` : "");
@@ -440,9 +579,10 @@ function renderSheet() {
   $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.disabled = !editable; inp.oninput = () => { sheet.per[inp.dataset.k] = inp.value; refreshTotals(); }; });
   $("sv-dn").onclick = () => { sheet.servings = Math.max(0.5, sheet.servings - 0.5); renderSheet(); };
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
-  if (typed) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
+  if (whole) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
   $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (isNaN(h)) return; const d = new Date(sheet.at); d.setHours(h, m, 0, 0); if (d > new Date() && sheet.mode !== "edit") d.setDate(d.getDate() - 1); sheet.at = d; renderSheet(); };
   $("sh-log").onclick = commitSheet;
+  const bl = $("built"); if (bl) bl.onclick = () => { sheet.showIngs = !sheet.showIngs; $("ings").hidden = !sheet.showIngs; bl.querySelector("span").textContent = sheet.showIngs ? "Tap to hide them." : "Tap to see them."; };
   const del = $("sh-del"); if (del) del.onclick = () => { if (!confirm("Delete " + (sheet.name || "this entry") + "?")) return; S.entries = S.entries.filter(e => e.id !== sheet.entry.id); save(); toast("Deleted"); show("home"); };
 }
 function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div>`; const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
@@ -452,12 +592,17 @@ function commitSheet() {
     const e = sheet.entry; Object.assign(e, t.tot, { name, t: sheet.at.toISOString(), est: t.est }); if (e.per) e.servings = sheet.servings; else e.per = undefined;
     save(); toast("Saved"); show("home"); return;
   }
-  const per = { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x };
+  const per = sheet.mode === "plate" ? platePer(sheet.rows, sheet.makes) : { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x };
   let pantryId = sheet.item ? sheet.item.id : null;
   if (sheet.item && !S.pantry.some(p => p.id === sheet.item.id)) S.pantry.unshift(sheet.item);
   if (sheet.mode === "typed" && sheet.keep && name) {
     const item = { id: uid(), name, serving: sheet.makes > 1 ? "1 of " + sheet.makes : "serving", per, src: "typed", added: Date.now(), used: [] };
     S.pantry.unshift(item); pantryId = item.id; sheet.servingText = item.serving;
+  }
+  if (sheet.mode === "plate") {
+    sheet.servingText = plateServing(sheet.makes, sheet.rows.length);
+    if (sheet.keep && name) { const item = { id: uid(), name, serving: sheet.servingText, per, src: "plate", added: Date.now(), used: [], makes: sheet.makes, plate: sheet.rows.map(r => plateRow({ id: r.itemId, name: r.name, serving: r.unit, src: r.src, per: r.per }, r.amount)) }; S.pantry.unshift(item); pantryId = item.id; }
+    plate = null;
   }
   const entry = Object.assign({ id: uid(), t: sheet.at.toISOString(), src: sheet.mode === "typed" ? "typed" : (sheet.src || "typed"), name, servings: sheet.servings, per, servingText: sheet.servingText, est: t.est }, t.tot);
   if (pantryId) { entry.pantryId = pantryId; const item = S.pantry.find(p => p.id === pantryId); if (item) { item.used = (item.used || []).concat(entry.t).slice(-20); } }
