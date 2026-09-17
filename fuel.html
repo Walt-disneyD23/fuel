@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Fuel">
 <link rel="apple-touch-icon" href="fuel-icon.png">
 <meta name="theme-color" content="#e9ebf1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0917c · a fuel log, not a diet app.
+  Fuel · build 0917d · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -38,7 +38,7 @@ html, body { margin:0; padding:0; }
 html { background:var(--page); }
 body {
   background:var(--page); color:var(--ink); font-family:var(--fb); -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
-  padding: env(safe-area-inset-top) 0 calc(84px + env(safe-area-inset-bottom));
+  padding: env(safe-area-inset-top) 0 calc(124px + env(safe-area-inset-bottom));
   min-height:100vh; box-sizing:border-box;
 }
 button, input { font-family:inherit; color:inherit; }
@@ -106,7 +106,6 @@ main[hidden] { display:none; }
 .door + .door { margin-top:10px; }
 .door .dt { font-size:17px; font-weight:600; }
 .door .dd { font-size:13px; color:var(--ink2); margin-top:3px; }
-.statusband { position:fixed; left:0; right:0; top:0; height:env(safe-area-inset-top); background:var(--page); z-index:5; }
 .door .chev { display:flex; color:var(--ink2); flex:0 0 auto; margin-left:12px; }
 .sect { font-size:13px; color:var(--ink2); font-weight:500; margin:22px 4px 8px; }
 .pi { display:flex; align-items:center; justify-content:space-between; width:100%; border:0; background:var(--card); border-radius:16px; padding:14px 16px; box-shadow:var(--shadow); text-align:left; }
@@ -190,7 +189,6 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 <body>
 
 <!-- ============ TODAY: the tally, then the spine ============ -->
-<div class="statusband" aria-hidden="true"></div>
 <main id="v-home">
   <section class="card" id="tally"></section>
   <div class="spinehead"><span class="title">Today</span><span class="sub" id="spinesub"></span></div>
@@ -242,7 +240,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0917c", BUILD_DATE = "Sep 17, 2026";
+const BUILD = "0917d", BUILD_DATE = "Sep 17, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -363,10 +361,10 @@ $("sheet-back").onclick = () => show(sheet && sheet.mode === "edit" ? "home" : "
 let sheet = null;
 function openSheet(o) {
   const now = new Date();
-  sheet = { mode: o.mode, openedAt: now, servings: 1, makes: 1, at: new Date(now), name: "", per: { kcal: "", p: "", c: "", f: "" }, keep: true, est: false };
-  if (o.mode === "pantry") { sheet.item = o.item; sheet.name = o.item.name; sheet.per = Object.assign({}, o.item.per); sheet.src = "pantry"; sheet.servingText = o.item.serving || "serving"; }
-  if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
-  if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
+  sheet = { mode: o.mode, openedAt: now, servings: 1, makes: 1, at: new Date(now), name: "", per: { kcal: "", p: "", c: "", f: "", fiber: "", sugar: "", sodium: "", satfat: "" }, keep: true, est: false };
+  if (o.mode === "pantry") { sheet.item = o.item; sheet.name = o.item.name; sheet.per = Object.assign({}, o.item.per, o.item.per.x || {}); sheet.src = "pantry"; sheet.servingText = o.item.serving || "serving"; }
+  if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
+  if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
   if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; }
   $("sheet-title").textContent = { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit" }[o.mode];
   $("sheet-sub").textContent = o.mode === "typed" ? "entered" : (SRC[sheet.src] || "entered");
@@ -378,11 +376,14 @@ function sheetTotals() {
   const perK = kcalTyped ? +per.kcal : kcalFromGrams(p, c, f);
   const est = !kcalTyped;
   const basis = sheet.mode === "typed" ? { kcal: perK / sheet.makes, p: p / sheet.makes, c: c / sheet.makes, f: f / sheet.makes } : { kcal: perK, p, c, f };
-  return { est, basis, tot: scale(basis, sheet.servings) };
+  const X = ["fiber", "sugar", "sodium", "satfat"], bx = {}, tx = {};
+  X.forEach(k => { const v = per[k], n = v === "" || v == null || isNaN(+v) ? null : +v; bx[k] = n == null ? null : (sheet.mode === "typed" ? n / sheet.makes : n); tx[k] = bx[k] == null ? null : r1(bx[k] * sheet.servings); });
+  basis.x = bx; const tot = scale(basis, sheet.servings); tot.x = tx;
+  return { est, basis, tot };
 }
 function renderSheet() {
   const t = sheetTotals(), tot = t.tot, typed = sheet.mode === "typed", editable = typed || sheet.mode === "edit" && !sheet.entry.per, isNow = Math.abs(sheet.at - sheet.openedAt) < 60000 && sheet.mode !== "edit";
-  const cell = (k, label, unit) => `<div class="cell${k === "kcal" && t.est ? " est" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : "0"}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
+  const cell = (k, label, unit) => `<div class="cell${k === "kcal" && t.est ? " est" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
   const canLog = (+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0;
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
@@ -391,13 +392,13 @@ function renderSheet() {
     `<div class="step"><button id="sv-dn" ${sheet.servings <= 0.5 ? "disabled" : ""}>−</button><div class="val"><div class="n">${stepText(sheet.servings)}</div><div class="u">${sheet.servings === 1 ? "serving" : "servings"}${typed ? " eaten" : ", " + esc(sheet.servingText) + " each"}</div></div><button id="sv-up">+</button></div>` +
     `<div class="herot"><div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div></div>` +
     `<div class="per"><div class="rowhead"><span>${typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(sheet.servingText)}</span><span>${editable ? "tap to change" : ""}</span></div>` +
-    `<div class="grid">${cell("kcal", "Calories", "")}${cell("p", "Protein", "g")}${cell("c", "Carbs", "g")}${cell("f", "Fat", "g")}</div>` +
+    `<div class="grid">${cell("kcal", "Calories", "")}${cell("p", "Protein", "g")}${cell("c", "Carbs", "g")}${cell("f", "Fat", "g")}</div><div class="grid">${cell("fiber", "Fiber", "g")}${cell("sugar", "Sugar", "g")}${cell("sodium", "Sodium", "mg")}${cell("satfat", "Sat. fat", "g")}</div>` +
     `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div></div>` +
-    (typed ? `<div class="row" style="margin-top:16px"><span>Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
+    (typed ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
     `<div class="ate"><span>Ate at</span><span class="t"><input type="time" id="sh-time" value="${hh}:${mm}">${isNow ? `<span class="now">now</span>` : ""}</span></div>` +
     `<button class="log" id="sh-log" ${canLog ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>` +
     (sheet.mode === "edit" ? `<button class="quiet" id="sh-del">Delete this entry</button>` : "");
-  $("sh-name").oninput = ev => { sheet.name = ev.target.value; const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } };
+  $("sh-name").oninput = ev => { sheet.name = ev.target.value; const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } const kl = $("keep-lbl"); if (kl) kl.textContent = "Keep in the pantry" + (sheet.name.trim() ? "" : " (name it first)"); };
   $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.disabled = !editable; inp.oninput = () => { sheet.per[inp.dataset.k] = inp.value; refreshTotals(); }; });
   $("sv-dn").onclick = () => { sheet.servings = Math.max(0.5, sheet.servings - 0.5); renderSheet(); };
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
@@ -413,7 +414,7 @@ function commitSheet() {
     const e = sheet.entry; Object.assign(e, t.tot, { name, t: sheet.at.toISOString(), est: t.est }); if (e.per) e.servings = sheet.servings; else e.per = undefined;
     save(); toast("Saved"); show("home"); return;
   }
-  const per = { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f) };
+  const per = { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x };
   let pantryId = sheet.item ? sheet.item.id : null;
   if (sheet.mode === "typed" && sheet.keep && name) {
     const item = { id: uid(), name, serving: sheet.makes > 1 ? "1 of " + sheet.makes : "serving", per, src: "typed", added: Date.now(), used: [] };
