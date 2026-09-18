@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0918d · a fuel log, not a diet app.
+  Fuel · build 0918e · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -216,6 +216,7 @@ input.name:focus, .ate input:focus, .row input.num:focus { box-shadow:0 0 0 2px 
 .about b { color:var(--ink); font-weight:600; }
 
 /* ---------- the bar ---------- */
+.strip { position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top); background:var(--page); z-index:5; pointer-events:none; }
 nav.bar {
   position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; align-items:center;
   padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:var(--card); border-top:1px solid var(--line);
@@ -233,6 +234,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 </style>
 </head>
 <body>
+<div class="strip" id="strip" aria-hidden="true"></div>
 
 <!-- ============ TODAY: the tally, then the spine ============ -->
 <div id="shell">
@@ -293,7 +295,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0918d", BUILD_DATE = "Sep 18, 2026";
+const BUILD = "0918e", BUILD_DATE = "Sep 18, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -401,6 +403,7 @@ function refreshPlate(p, fresh) { const rows = p.plate.map(r => fresh[r.itemId] 
 function pantryAfterChange(pantry, item, follow) { const fresh = {}; fresh[item.id] = item; let out = pantry.map(p => p.id === item.id ? item : p); if (follow) for (const h of platesHolding(out, item.id)) { const n = refreshPlate(out.find(p => p.id === h.id), fresh); fresh[n.id] = n; out = out.map(p => p.id === n.id ? n : p); } return out; }
 function pantryWithout(pantry, id) { return pantry.filter(p => p.id !== id); }
 function changeExcludes(pantry, id) { return [id].concat(platesHolding(pantry, id).map(p => p.id)); }   /* a plate being changed, and every plate that holds it, stay out of its own picker: no loops */
+function stripTop(off) { const v = Math.round(+off); return v > 0 ? v : 0; }                         /* 0918e: the clock's strip follows the part of the page you can see */
 /* @fuel:pure:end */
 
 /* ================= the starter pantry — USDA SR28 via fuel-pantry-seed.json; change both together ================= */
@@ -794,6 +797,7 @@ $("export").onclick = async () => {
 };
 
 /* ================= go ================= */
+(function () { const vv = window.visualViewport, el = $("strip"); if (!vv || !el) return; const put = () => { el.style.transform = "translateY(" + stripTop(vv.offsetTop) + "px)"; }; vv.addEventListener("resize", put); vv.addEventListener("scroll", put); put(); })();
 applyTheme(); show("home");
 setInterval(() => { if (view === "home") renderHome(); }, 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && view === "home") renderHome(); });
