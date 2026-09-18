@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0918c · a fuel log, not a diet app.
+  Fuel · build 0918d · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -44,8 +44,8 @@ body {
 html { scrollbar-width:none; }
 html::-webkit-scrollbar, body::-webkit-scrollbar { display:none; }
 button, input { font-family:inherit; color:inherit; }
-button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
-body, input { touch-action:manipulation; }
+button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:pan-x pan-y; }
+html, body, input { touch-action:pan-x pan-y; }
 input[type=number] { -moz-appearance:textfield; } input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
 main { padding:14px 16px 0; max-width:520px; margin:0 auto; }
 main[hidden] { display:none; }
@@ -293,7 +293,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0918c", BUILD_DATE = "Sep 18, 2026";
+const BUILD = "0918d", BUILD_DATE = "Sep 18, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
