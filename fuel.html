@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0918i · a fuel log, not a diet app.
+  Fuel · build 0918j · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -68,6 +68,9 @@ main[hidden] { display:none; }
 .mval { font-family:var(--fd); font-size:15px; font-weight:700; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
 .mval span { color:var(--ink2); font-family:var(--fb); font-weight:500; letter-spacing:0; }
 .track { height:10px; border-radius:6px; background:var(--track); overflow:hidden; }
+.m.flip { cursor:pointer; -webkit-tap-highlight-color:transparent; } .mname .swap { vertical-align:-2px; margin-left:4px; color:var(--ink2); }
+.track.two { display:flex; } .track.two .fill { border-radius:6px 0 0 6px; } .track.two .fill.fib { border-radius:0 6px 6px 0; background:var(--acc3); }
+.netline { margin-top:8px; font-size:13px; color:var(--ink2); font-weight:500; line-height:1.4; }
 .fill { height:100%; border-radius:6px; background:var(--acc); transition:width .25s ease; }
 .read { margin-top:22px; padding-top:18px; border-top:1px solid var(--line); font-size:18px; line-height:1.4; font-weight:500; }
 .notice { margin-top:14px; font-size:14px; color:var(--ink2); }
@@ -275,6 +278,10 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
     <p class="fine" style="margin:14px 0 0">Targets are yours. Fuel never moves them and never scolds. Over is a number.</p>
   </section>
   <section class="card">
+    <div class="row"><span>Net carbs</span><button class="sw" id="net-sw" role="switch" aria-checked="false"></button></div>
+    <p class="fine" style="margin:14px 0 0">Carbs minus fiber. When this is on, tap the Carbs bar on Today to flip it to net carbs and back. An entry with no fiber number counts all its carbs, and the bar says how many there are. Fuel does not subtract sugar alcohols.</p>
+  </section>
+  <section class="card">
     <div class="row"><span>Look</span><span class="seg" id="theme"><button data-t="light">Light</button><button data-t="auto">Auto</button><button data-t="dark">Dark</button></span></div>
     <div class="row"><span>Version</span><span class="rv" id="version"></span></div>
     <div class="row"><span>Export</span><button class="quiet" style="width:auto;margin:0;padding:8px 12px;background:var(--field);color:var(--ink)" id="export">Save a copy</button></div>
@@ -296,7 +303,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0918i", BUILD_DATE = "Sep 18, 2026";
+const BUILD = "0918j", BUILD_DATE = "Sep 18, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -405,6 +412,11 @@ function pantryAfterChange(pantry, item, follow) { const fresh = {}; fresh[item.
 function pantryWithout(pantry, id) { return pantry.filter(p => p.id !== id); }
 function changeExcludes(pantry, id) { return [id].concat(platesHolding(pantry, id).map(p => p.id)); }   /* a plate being changed, and every plate that holds it, stay out of its own picker: no loops */
 function stripTop(off) { const v = Math.round(+off); return v > 0 ? v : 0; }                         /* 0918e: the clock's strip follows the part of the page you can see */
+/* 0918j — net carbs: carbs minus fiber, nothing else. A fiber nobody typed is unknown, never zero: on a food that means no net carbs; across a day the entry counts all its carbs and is counted as a gap (G2). */
+function netCarbs(c, fiber) { if (c == null || c === "" || fiber == null || fiber === "" || isNaN(+c) || isNaN(+fiber)) return null; return Math.max(0, r1(+c - +fiber)); }
+function dayNet(entries) { let c = 0, fib = 0, gaps = 0; for (const e of entries) { const ec = +e.c || 0, f = e.x ? e.x.fiber : null; c += ec; if (f == null || f === "" || isNaN(+f)) { if (ec > 0) gaps++; } else fib += Math.min(Math.max(0, +f), ec); } return { c: r1(c), fiber: r1(fib), net: r1(c - fib), gaps: gaps }; }
+function netLine(d, t) { return fmt(d.c) + " g carbs of " + fmt(t) + " g" + (d.c > t ? ", " + fmt(d.c - t) + " over" : "") + ", " + fmt(d.fiber) + " g of it fiber" + (d.gaps ? ". " + d.gaps + (d.gaps === 1 ? " entry has" : " entries have") + " no fiber number." : ""); }
+function netFill(d, t) { if (!(t > 0)) return { net: 0, fiber: 0 }; const all = Math.min(100, d.c / t * 100), net = Math.min(all, d.net / t * 100); return { net: net, fiber: all - net }; }
 /* @fuel:pure:end */
 
 /* ================= the starter pantry — USDA SR28 via fuel-pantry-seed.json; change both together ================= */
@@ -473,15 +485,25 @@ let toastT; function toast(msg) { const t = $("toast"); t.textContent = msg; t.c
 
 /* ================= today ================= */
 function todayEntries(now) { const k = dayKey(now); return S.entries.filter(e => dayKey(e.t) === k).sort((a, b) => new Date(a.t) - new Date(b.t)); }
+const SWAP = ` <svg class="swap" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h13"/><path d="m17 12 4 4-4 4"/><path d="M21 16H8"/></svg>`;
+function netOn() { return Array.isArray(S.callouts) && S.callouts.includes("net"); }
+function carbBar(es, tot, tg) {                                                                     /* off: exactly the bar it always was. on: a flip, two faces, the face kept in S.carbFace */
+  const t = tg.c, plain = (name, val, track, line) => `<div class="mrow"><span class="mname">${name}</span><span class="mval">${val}</span></div>${track}${line}`, one = `<div class="track"><div class="fill" style="width:${t ? Math.min(100, tot.c / t * 100) : 0}%"></div></div>`;
+  if (!netOn()) return `<div class="m">${plain("Carbs", macroVal(tot.c, t), one, "")}</div>`;
+  if (S.carbFace === "carbs") return `<div class="m flip" id="carb-flip" role="button" tabindex="0" aria-label="Carbs. Tap to show net carbs.">${plain("Carbs" + SWAP, macroVal(tot.c, t), one, "")}</div>`;
+  const d = dayNet(es), w = netFill(d, t), two = w.fiber > 0.05 ? `<div class="track two"><div class="fill" style="width:${w.net}%"></div><div class="fill fib" style="width:${w.fiber}%"></div></div>` : `<div class="track"><div class="fill" style="width:${w.net}%"></div></div>`;
+  return `<div class="m flip" id="carb-flip" role="button" tabindex="0" aria-label="Net carbs. Tap to show carbs.">${plain("Net carbs" + SWAP, fmt(d.net) + " g", two, `<div class="netline">${esc(netLine(d, t))}</div>`)}</div>`;
+}
 function renderHome() {
   const now = new Date(), es = todayEntries(now), tot = totals(es), tg = S.targets, tg2 = toGoLine(tot, tg);
   const bar = (name, v, t) => `<div class="m"><div class="mrow"><span class="mname">${name}</span><span class="mval">${macroVal(v, t)}</span></div><div class="track"><div class="fill" style="width:${t ? Math.min(100, v / t * 100) : 0}%"></div></div></div>`;
   $("tally").innerHTML =
     `<div class="top"><span>${now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span><span class="tn">${clock(now)}</span></div>` +
     `<div class="hero"><div class="kcal"><span class="big">${fmt(tot.kcal)}</span><span class="unit">kcal</span></div><div class="togo"><strong>${tg2.lead}</strong> ${tg2.tail}</div></div>` +
-    bar("Protein", tot.p, tg.p) + bar("Carbs", tot.c, tg.c) + bar("Fat", tot.f, tg.f) +
+    bar("Protein", tot.p, tg.p) + carbBar(es, tot, tg) + bar("Fat", tot.f, tg.f) +
     `<div class="read">${esc(readLine(tot, tg, now))}</div>` +
     (S.targetsSet ? "" : `<div class="notice">These targets are a starting point. <a href="#" id="go-targets">Set yours in Settings</a>.</div>`);
+  const cf = $("carb-flip"); if (cf) { const flip = () => { S.carbFace = S.carbFace === "carbs" ? "net" : "carbs"; save(); renderHome(); }; cf.onclick = flip; cf.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); flip(); } }; }
   const g = $("go-targets"); if (g) g.onclick = ev => { ev.preventDefault(); show("settings"); };
   $("spinesub").textContent = es.length ? `${es.length} ${es.length === 1 ? "entry" : "entries"}, ${fmt(tot.kcal)} kcal` : "";
   if (!es.length) { $("spine").innerHTML = `<div class="empty">Nothing yet. The day starts with the first entry.</div>`; return; }
@@ -783,9 +805,11 @@ function removeManage() {
 function renderSettings() {
   ["kcal", "p", "c", "f"].forEach(k => { $("t-" + k).value = S.targets[k]; });
   $("version").innerHTML = `${BUILD}<span>${BUILD_DATE}</span>`;
+  $("net-sw").setAttribute("aria-checked", String(netOn()));
   applyTheme();
 }
 ["kcal", "p", "c", "f"].forEach(k => { $("t-" + k).onchange = ev => { const v = Math.max(0, Math.round(+ev.target.value || 0)); S.targets[k] = v; S.targetsSet = true; save(); ev.target.value = v; }; });
+$("net-sw").onclick = () => { const on = !netOn(); S.callouts = (Array.isArray(S.callouts) ? S.callouts : []).filter(k => k !== "net"); if (on) { S.callouts.push("net"); S.carbFace = "net"; } save(); renderSettings(); };
 document.querySelectorAll("#theme button").forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); applyTheme(); });
 $("export").onclick = async () => {
   const text = JSON.stringify({ app: "Fuel", build: BUILD, exported: new Date().toISOString(), entries: S.entries, pantry: S.pantry, targets: S.targets }, null, 2);
