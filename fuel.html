@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0918j · a fuel log, not a diet app.
+  Fuel · build 0918k · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -184,6 +184,9 @@ main[hidden] { display:none; }
 .grid + .grid { margin-top:8px; }
 .cell { background:var(--field); border-radius:10px; padding:8px 10px; min-width:0; box-shadow:0 0 0 2px transparent; transition:box-shadow .12s; }
 .cell:focus-within { box-shadow:0 0 0 2px var(--acc); }
+.cell.co:not(:focus-within) { box-shadow:0 0 0 1.5px var(--acc2); }
+.netnote { margin-top:12px; font-size:14px; font-weight:600; } .netnote b { font-family:var(--fd); font-weight:700; } .netnote span { display:block; font-size:13px; font-weight:500; color:var(--ink2); margin-top:2px; }
+.macros .co, .macros .co b { color:var(--acc); }
 input:focus, button:focus { outline:none; }
 input.name:focus, .ate input:focus, .row input.num:focus { box-shadow:0 0 0 2px var(--acc); }
 .cell .l { font-size:12px; color:var(--ink2); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -303,7 +306,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0918j", BUILD_DATE = "Sep 18, 2026";
+const BUILD = "0918k", BUILD_DATE = "Sep 18, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -416,6 +419,12 @@ function stripTop(off) { const v = Math.round(+off); return v > 0 ? v : 0; }    
 function netCarbs(c, fiber) { if (c == null || c === "" || fiber == null || fiber === "" || isNaN(+c) || isNaN(+fiber)) return null; return Math.max(0, r1(+c - +fiber)); }
 function dayNet(entries) { let c = 0, fib = 0, gaps = 0; for (const e of entries) { const ec = +e.c || 0, f = e.x ? e.x.fiber : null; c += ec; if (f == null || f === "" || isNaN(+f)) { if (ec > 0) gaps++; } else fib += Math.min(Math.max(0, +f), ec); } return { c: r1(c), fiber: r1(fib), net: r1(c - fib), gaps: gaps }; }
 function netLine(d, t) { return fmt(d.c) + " g carbs of " + fmt(t) + " g" + (d.c > t ? ", " + fmt(d.c - t) + " over" : "") + ", " + fmt(d.fiber) + " g of it fiber" + (d.gaps ? ". " + d.gaps + (d.gaps === 1 ? " entry has" : " entries have") + " no fiber number." : ""); }
+function netShown(c, fiber) { return Math.max(0, Math.round(+c || 0) - Math.round(+fiber || 0)); }                /* R1 (IMG_3258): where whole grams are shown, net shown = carbs shown − fiber shown */
+function netNoteParts(c, fiber, partial) {                                                        /* F2: what the line under the tiles says, per serving, to one decimal like the tiles; null = say nothing */
+  if (partial) return { n: "unknown", why: "this plate's fiber is partial" }; if (!(+c > 0)) return null;
+  if (netCarbs(c, fiber) == null) return { n: "unknown", why: "this food has no fiber number" };
+  const C = r1(+c), Fb = Math.min(C, Math.max(0, r1(+fiber))); return { n: String(r1(C - Fb)) + " g", why: String(C) + " g carbs minus " + String(Fb) + " g fiber" };
+}
 function netFill(d, t) { if (!(t > 0)) return { net: 0, fiber: 0 }; const all = Math.min(100, d.c / t * 100), net = Math.min(all, d.net / t * 100); return { net: net, fiber: all - net }; }
 /* @fuel:pure:end */
 
@@ -491,8 +500,8 @@ function carbBar(es, tot, tg) {                                                 
   const t = tg.c, plain = (name, val, track, line) => `<div class="mrow"><span class="mname">${name}</span><span class="mval">${val}</span></div>${track}${line}`, one = `<div class="track"><div class="fill" style="width:${t ? Math.min(100, tot.c / t * 100) : 0}%"></div></div>`;
   if (!netOn()) return `<div class="m">${plain("Carbs", macroVal(tot.c, t), one, "")}</div>`;
   if (S.carbFace === "carbs") return `<div class="m flip" id="carb-flip" role="button" tabindex="0" aria-label="Carbs. Tap to show net carbs.">${plain("Carbs" + SWAP, macroVal(tot.c, t), one, "")}</div>`;
-  const d = dayNet(es), w = netFill(d, t), two = w.fiber > 0.05 ? `<div class="track two"><div class="fill" style="width:${w.net}%"></div><div class="fill fib" style="width:${w.fiber}%"></div></div>` : `<div class="track"><div class="fill" style="width:${w.net}%"></div></div>`;
-  return `<div class="m flip" id="carb-flip" role="button" tabindex="0" aria-label="Net carbs. Tap to show carbs.">${plain("Net carbs" + SWAP, fmt(d.net) + " g", two, `<div class="netline">${esc(netLine(d, t))}</div>`)}</div>`;
+  const d = dayNet(es), shown = netShown(d.c, d.fiber), w = netFill(d, t), two = w.fiber > 0.05 ? `<div class="track two"><div class="fill" style="width:${w.net}%"></div><div class="fill fib" style="width:${w.fiber}%"></div></div>` : `<div class="track"><div class="fill" style="width:${w.net}%"></div></div>`;
+  return `<div class="m flip" id="carb-flip" role="button" tabindex="0" aria-label="Net carbs. Tap to show carbs.">${plain("Net carbs" + SWAP, fmt(shown) + " g", two, `<div class="netline">${esc(netLine(d, t))}</div>`)}</div>`;
 }
 function renderHome() {
   const now = new Date(), es = todayEntries(now), tot = totals(es), tg = S.targets, tg2 = toGoLine(tot, tg);
@@ -629,8 +638,8 @@ function sheetBack() {
   show("add"); if (y) window.scrollTo(0, y);
 }
 function roTiles(per, partial, head) {
-  const x = per.x || {}, cell = (k, label, v, unit) => partial.includes(k) ? `<div class="cell"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell"><div class="l">${label}</div><div class="x"><input disabled value="${v == null ? "" : v}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
-  return `<div class="per"><div class="rowhead"><span>${esc(head)}</span><span></span></div><div class="grid">${cell("kcal", "Calories", per.kcal, "")}${cell("p", "Protein", per.p, "g")}${cell("c", "Carbs", per.c, "g")}${cell("f", "Fat", per.f, "g")}</div><div class="grid">${cell("fiber", "Fiber", x.fiber, "g")}${cell("sugar", "Sugar", x.sugar, "g")}${cell("sodium", "Sodium", x.sodium, "mg")}${cell("satfat", "Sat. fat", x.satfat, "g")}</div>${partial.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`;
+  const x = per.x || {}, cell = (k, label, v, unit) => partial.includes(k) ? `<div class="cell"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input disabled value="${v == null ? "" : v}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
+  return `<div class="per"><div class="rowhead"><span>${esc(head)}</span><span></span></div><div class="grid">${cell("kcal", "Calories", per.kcal, "")}${cell("p", "Protein", per.p, "g")}${cell("c", "Carbs", per.c, "g")}${cell("f", "Fat", per.f, "g")}</div><div class="grid">${cell("fiber", "Fiber", x.fiber, "g")}${cell("sugar", "Sugar", x.sugar, "g")}${cell("sodium", "Sodium", x.sodium, "mg")}${cell("satfat", "Sat. fat", x.satfat, "g")}</div>${netNote(per.c, x.fiber, partial.includes("fiber"), "per serving")}${partial.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`;
 }
 function builtHtml(rows, tiles) {
   if (!rows || !rows.length) return "";
@@ -667,10 +676,12 @@ function sheetTotals() {
   basis.x = bx; const tot = scale(basis, sheet.servings); tot.x = tx;
   return { est, basis, tot };
 }
+function netHero(tot) { return netOn() && tot.x && tot.x.fiber != null && +tot.c > 0 ? `<span class="co">Net carbs <b>${fmt(netShown(tot.c, tot.x.fiber))} g</b></span><br>` : ""; }      /* F1 */
+function netNote(c, fiber, partial, per) { if (!netOn()) return ""; const p = netNoteParts(c, fiber, partial); return p ? `<div class="netnote">Net carbs <b>${p.n}</b>${p.n === "unknown" ? "" : " " + esc(per)} <span>${p.why}</span></div>` : ""; }      /* F2 */
 function renderSheet() {
   const t = sheetTotals(), tot = t.tot, typed = sheet.mode === "typed", isPlate = sheet.mode === "plate", whole = typed || isPlate, prow = isPlate ? sheet.rows : (sheet.item && sheet.item.plate) || null, editable = typed || sheet.mode === "edit" && !sheet.entry.per, isNow = Math.abs(sheet.at - sheet.openedAt) < 60000 && sheet.mode !== "edit";
   const part = prow && !isPlate ? platePartial(prow) : [];
-  const cell = (k, label, unit) => part.includes(k) ? `<div class="cell"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${k === "kcal" && t.est ? " est" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
+  const cell = (k, label, unit) => part.includes(k) ? `<div class="cell"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${k === "kcal" && t.est ? " est" : ""}${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
   const canLog = (+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0;
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
@@ -678,10 +689,11 @@ function renderSheet() {
     (typed ? `<div id="ms"></div>` : "") +
     (whole ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button></span></div>` : "") +
     `<div class="step"><button id="sv-dn" ${sheet.servings <= 0.5 ? "disabled" : ""}>−</button><div class="val"><div class="n">${stepText(sheet.servings)}</div><div class="u">${sheet.servings === 1 ? "serving" : "servings"}${whole ? " eaten" : ", " + esc(sheet.servingText) + " each"}</div></div><button id="sv-up">+</button></div>` +
-    `<div class="herot"><div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div></div>` +
+    `<div class="herot"><div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div></div>` +
     builtHtml(prow, isPlate ? roTiles(platePer(sheet.rows, sheet.makes), platePartial(sheet.rows), "built from ingredients, per " + plateServing(sheet.makes, sheet.rows.length)) : "") +
     (isPlate ? "" : `<div class="per"><div class="rowhead"><span>${typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(sheet.servingText)}</span><span>${editable ? "tap to change" : ""}</span></div>` +
     `<div class="grid">${cell("kcal", "Calories", "")}${cell("p", "Protein", "g")}${cell("c", "Carbs", "g")}${cell("f", "Fat", "g")}</div><div class="grid">${cell("fiber", "Fiber", "g")}${cell("sugar", "Sugar", "g")}${cell("sodium", "Sodium", "mg")}${cell("satfat", "Sat. fat", "g")}</div>` +
+    `<div id="net-note">${netNote(t.basis.c, t.basis.x.fiber, part.includes("fiber"), typed ? "per serving" : "per " + sheet.servingText)}</div>` +
     `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div>${part.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`) +
     (whole ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
     `<div class="ate"><span>Ate at</span><span class="t"><input type="time" id="sh-time" value="${hh}:${mm}">${isNow ? `<span class="now">now</span>` : ""}</span></div>` +
@@ -700,7 +712,7 @@ function renderSheet() {
   const bl = $("built"); if (bl) bl.onclick = () => { sheet.showIngs = !sheet.showIngs; $("ings").hidden = !sheet.showIngs; bl.querySelector("span").textContent = sheet.showIngs ? "Tap to hide them." : "Tap to see them."; };
   const del = $("sh-del"); if (del) del.onclick = () => { if (!confirm("Delete " + (sheet.name || "this entry") + "?")) return; S.entries = S.entries.filter(e => e.id !== sheet.entry.id); save(); toast("Deleted"); show("home"); };
 }
-function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
+function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), sheet.mode === "typed" ? "per serving" : "per " + sheet.servingText); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
 function commitSheet(keepOnly) {
   const t = sheetTotals(), name = sheet.name.trim();
   if (sheet.mode === "edit") {
