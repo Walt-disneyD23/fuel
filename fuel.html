@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0917l · a fuel log, not a diet app.
+  Fuel · build 0918a · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -137,6 +137,10 @@ main[hidden] { display:none; }
 .built { display:block; width:100%; border:0; border-top:1px solid var(--line); background:transparent; margin-top:14px; padding:12px 0 0; text-align:left; font:500 14px var(--fb); color:var(--ink2); line-height:1.45; }
 .built span { color:var(--ink); font-weight:600; }
 .cell .x span.ptl { font:600 14px var(--fb); color:var(--ink2); margin-left:0; }
+.head .chg { margin-left:auto; border:0; background:var(--card); box-shadow:var(--shadow); border-radius:12px; padding:9px 14px; font:600 14px var(--fb); color:var(--ink); }
+.inplates { margin-top:12px; border-top:1px solid var(--line); }
+.inplates div { padding:10px 0; border-bottom:1px solid var(--line); font-size:15px; font-weight:600; }
+.pi .pn .plt { vertical-align:-4px; margin-right:8px; color:var(--ink); }
 #ings { margin-top:8px; }
 .ing { display:grid; grid-template-columns:minmax(0,1fr) 138px 56px; align-items:center; column-gap:10px; padding:11px 0; border-top:1px solid var(--line); }
 .ing:first-of-type { border-top:0; }
@@ -245,7 +249,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <!-- ============ the entry sheet ============ -->
 <main id="v-sheet" hidden>
-  <div class="head"><button class="back" id="sheet-back" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title" id="sheet-title">Type it</span><span class="sub" id="sheet-sub">entered</span></div>
+  <div class="head"><button class="back" id="sheet-back" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title" id="sheet-title">Type it</span><span class="sub" id="sheet-sub">entered</span><button class="chg" id="sheet-chg" hidden>Change</button></div>
   <section class="card" id="sheet"></section>
 </main>
 
@@ -281,7 +285,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0917l", BUILD_DATE = "Sep 17, 2026";
+const BUILD = "0918a", BUILD_DATE = "Sep 18, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -362,6 +366,19 @@ function builtLine(rows) {
   if (!u) return lead + (n === 2 ? "both" : "all") + " yours.";
   return lead + u + (u === 1 ? " USDA estimate" : " USDA estimates") + " and " + y + " of yours.";
 }
+/* ruled Sep 18 2026 (K2): changing the pantry on purpose is a different act. A changed item reaches the plates that hold it only when asked, all of them or none, inner plates first; every other row stays the plate's own copy. */
+function platesHolding(pantry, id) {
+  const seen = new Set([id]), found = []; let grew = true;
+  while (grew) { grew = false; for (const p of pantry) if (p.plate && !seen.has(p.id) && p.plate.some(r => seen.has(r.itemId))) { seen.add(p.id); found.push(p); grew = true; } }
+  const ids = new Set(found.map(p => p.id)), done = new Set(), out = [];
+  while (out.length < found.length) { const next = found.filter(p => !done.has(p.id) && !p.plate.some(r => ids.has(r.itemId) && !done.has(r.itemId))); if (!next.length) break; next.forEach(p => { done.add(p.id); out.push(p); }); }
+  return out;
+}
+function rowCopy(r) { return plateRow({ id: r.itemId, name: r.name, serving: r.unit, src: r.src, per: r.per }, r.amount); }
+function refreshPlate(p, fresh) { const rows = p.plate.map(r => fresh[r.itemId] ? plateRow(fresh[r.itemId], r.amount) : rowCopy(r)), makes = p.makes || 1; return Object.assign({}, p, { plate: rows, per: platePer(rows, makes), serving: plateServing(makes, rows.length) }); }
+function pantryAfterChange(pantry, item, follow) { const fresh = {}; fresh[item.id] = item; let out = pantry.map(p => p.id === item.id ? item : p); if (follow) for (const h of platesHolding(out, item.id)) { const n = refreshPlate(out.find(p => p.id === h.id), fresh); fresh[n.id] = n; out = out.map(p => p.id === n.id ? n : p); } return out; }
+function pantryWithout(pantry, id) { return pantry.filter(p => p.id !== id); }
+function changeExcludes(pantry, id) { return [id].concat(platesHolding(pantry, id).map(p => p.id)); }   /* a plate being changed, and every plate that holds it, stay out of its own picker: no loops */
 /* @fuel:pure:end */
 
 /* ================= the starter pantry — USDA SR28 via fuel-pantry-seed.json; change both together ================= */
@@ -389,6 +406,8 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[ch]));
 const SRC = { pantry: "from the pantry", label: "read from the label", typed: "entered", usda: "USDA estimate", plate: "built from ingredients" };
+const PLT = '<svg class="plt" viewBox="0 1 24 21" width="23" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g stroke-width="2.2"><ellipse cx="12" cy="11" rx="10.4" ry="5.6"/><ellipse cx="12" cy="10.6" rx="5.6" ry="2.6"/><path d="M2.4 13.6c1.4 3.4 5.2 5.4 9.6 5.4s8.2-2 9.6-5.4"/></g></svg>';
+function mark(p) { return p.plate || p.src === "plate" ? PLT : ""; }
 
 /* ================= theme ================= */
 const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -436,7 +455,7 @@ function renderAdd() {
   const yest = S.entries.filter(e => dayKey(e.t) === yk).sort((a, b) => new Date(a.t) - new Date(b.t));
   let html = "";
   if (!pantry.length && !yest.length) html = `<p class="fine" style="margin:0 4px">Nothing in your pantry yet. Name what you type and it lands here; yesterday's entries show here too.</p>`;
-  pantry.forEach(p => { html += `<button class="pi" data-p="${p.id}"><span><span class="pn">${esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`; });
+  pantry.forEach(p => { html += `<button class="pi" data-p="${p.id}"><span><span class="pn">${mark(p)}${esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`; });
   if (yest.length) { html += `<div class="sect">Yesterday</div>`; yest.forEach(e => { html += `<button class="pi" data-y="${e.id}"><span><span class="pn">${esc(e.name || "Untitled")}</span><span class="ps" style="display:block">${clock(e.t)} yesterday, ${SRC[e.src] || "entered"}</span></span><span class="pk tn">${fmt(e.kcal)}<span>kcal</span></span></button>`; }); }
   $("repeat").innerHTML = html;
   $("repeat").querySelectorAll("[data-p]").forEach(b => b.onclick = () => openSheet({ mode: "pantry", item: S.pantry.find(p => p.id === b.dataset.p) }));
@@ -451,7 +470,7 @@ function renderFind() {
   $("add-body").hidden = true; R.hidden = false;
   const hit = p => p.name.toLowerCase().includes(q);
   const mine = S.pantry.filter(hit), have = new Set(S.pantry.map(p => p.id)), starter = STARTER.filter(p => !have.has(p.id) && hit(p));
-  const card = (p, attr) => `<button class="pi" ${attr}="${p.id}"><span><span class="pn">${markHit(p.name, q)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`;
+  const card = (p, attr) => `<button class="pi" ${attr}="${p.id}"><span><span class="pn">${mark(p)}${markHit(p.name, q)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`;
   let html = "";
   if (mine.length) html += `<div class="sect">Your pantry</div>` + mine.map(p => card(p, "data-p")).join("");
   if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(p => card(p, "data-s")).join("");
@@ -470,12 +489,14 @@ function findItem(id) { return S.pantry.find(p => p.id === id) || STARTER.find(p
 function subLine(p) { return "per " + esc(p.serving || "serving") + (p.plate ? "" : ", " + (SRC[p.src] || "entered")); }
 function rowSub(r) { return amountText(r.unit, r.amount) + ", " + fmt(scale(r.per, r.amount).kcal) + " kcal"; }
 function alreadyIn(q) { const hit = plate.rows.filter(r => r.name.toLowerCase().includes(q)); return !hit.length ? "" : hit.length === 1 ? esc(hit[0].name) + " is already in the plate." : "Those are already in the plate."; }
+function loopNote(q, shut) { const p = S.pantry.find(x => shut.has(x.id) && x.name.toLowerCase().includes(q)); return !p ? "" : plate.editing && p.id === plate.editing.sheet.item.id ? "A plate can't go inside itself." : esc(p.name) + " already holds this plate."; }
 function renderAddHead() {
-  $("add-head").innerHTML = plate ? `<button class="back" id="plate-back" aria-label="Back">${$("sheet-back").innerHTML}</button><span class="title">Build a plate</span><span class="sub" id="plate-sub">${plateHead(plate.rows)}</span>` : `<span class="title">Add</span>`;
+  $("add-head").innerHTML = plate ? `<button class="back" id="plate-back" aria-label="Back">${$("sheet-back").innerHTML}</button><span class="title">${plate.editing ? "Change the ingredients" : "Build a plate"}</span><span class="sub" id="plate-sub">${plateHead(plate.rows)}</span>` : `<span class="title">Add</span>`;
   $("find").placeholder = plate ? "Find an ingredient" : "Find a food";
   const b = $("plate-back"); if (b) b.onclick = leavePlate;
 }
 function leavePlate() {
+  if (plate.editing) return backToManage();
   const n = plate.rows.length;
   if (n && !confirm("Leave this plate? The " + n + (n === 1 ? " ingredient" : " ingredients") + " in it will be cleared.")) return;
   plate = null; $("find").value = ""; show("add");
@@ -483,14 +504,14 @@ function leavePlate() {
 function renderPicker() {
   const q = ($("find").value || "").trim().toLowerCase(), R = $("results");
   $("add-body").hidden = true; R.hidden = false;
-  const inIds = new Set(plate.rows.map(r => r.itemId)), hit = p => !inIds.has(p.id) && (!q || p.name.toLowerCase().includes(q));
+  const shut = new Set(plate.editing ? plate.editing.exclude : []), inIds = new Set(plate.rows.map(r => r.itemId)), hit = p => !shut.has(p.id) && !inIds.has(p.id) && (!q || p.name.toLowerCase().includes(q));
   const mine = (q ? S.pantry : repeatOrder(S.pantry, new Date())).filter(hit), have = new Set(S.pantry.map(p => p.id)), starter = q ? STARTER.filter(p => !have.has(p.id) && hit(p)) : [];
-  const card = p => `<button class="pi pick" data-add="${p.id}"><span><span class="pn">${q ? markHit(p.name, q) : esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span><span class="plus" aria-hidden="true">+</span></button>`;
+  const card = p => `<button class="pi pick" data-add="${p.id}"><span><span class="pn">${mark(p)}${q ? markHit(p.name, q) : esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span><span class="plus" aria-hidden="true">+</span></button>`;
   let html = "";
   if (mine.length) html += `<div class="sect">Your pantry</div>` + mine.map(card).join("");
   if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(card).join("");
-  if (!mine.length && !starter.length) html += `<p class="fine" style="margin:14px 4px 0">${q ? (alreadyIn(q) || "Nothing called that yet. Type it and name it first, and it can go in a plate.") : (plate.rows.length ? "Find the next ingredient, or you're done." : "Find each ingredient by name and tap +. Fuel adds the plate up.")}</p>`;
-  if (plate.rows.length) html += `<div class="sect">In the plate</div>` + plate.rows.map((r, i) => `<div class="pi on"><button class="pt" data-open="${i}"><span class="pn" style="display:block">${esc(r.name)}</span><span class="ps" style="display:block" id="rs-${i}">${rowSub(r)}</span></button><span class="amt"><button class="plus mn" data-dn="${i}" aria-label="Less" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><button class="plus" data-up="${i}" aria-label="More">+</button></span></div>`).join("");
+  if (!mine.length && !starter.length) html += `<p class="fine" style="margin:14px 4px 0">${q ? (alreadyIn(q) || loopNote(q, shut) || "Nothing called that yet. Type it and name it first, and it can go in a plate.") : (plate.rows.length ? "Find the next ingredient, or you're done." : "Find each ingredient by name and tap +. Fuel adds the plate up.")}</p>`;
+  if (plate.rows.length) html += `<div class="sect">In the plate</div>` + plate.rows.map((r, i) => `<div class="pi on"><button class="pt" data-open="${i}"><span class="pn" style="display:block">${mark(r)}${esc(r.name)}</span><span class="ps" style="display:block" id="rs-${i}">${rowSub(r)}</span></button><span class="amt"><button class="plus mn" data-dn="${i}" aria-label="Less" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><button class="plus" data-up="${i}" aria-label="More">+</button></span></div>`).join("");
   html += `<button class="log" id="plate-done" style="margin-top:18px" ${plate.rows.length ? "" : "disabled"}>${plate.rows.length ? "Done, " + plate.rows.length + " in" : "Done"}</button>`;
   R.innerHTML = html;
   R.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { plate.rows.unshift(plateRow(findItem(b.dataset.add), 1)); $("find").value = ""; renderAddHead(); renderPicker(); });
@@ -498,12 +519,12 @@ function renderPicker() {
   const nudge = (i, dir) => { const r = plate.rows[i]; r.amount = plateStep(r.amount, dir); $("rs-" + i).textContent = rowSub(r); $("plate-sub").textContent = plateHead(plate.rows); R.querySelector(`[data-dn="${i}"]`).disabled = r.amount <= 0.5; };   // in place: nothing redraws under the finger
   R.querySelectorAll("[data-dn]").forEach(b => b.onclick = () => nudge(+b.dataset.dn, -1));
   R.querySelectorAll("[data-up]").forEach(b => b.onclick = () => nudge(+b.dataset.up, 1));
-  $("plate-done").onclick = () => openSheet({ mode: "plate" });
+  $("plate-done").onclick = () => plate.editing ? backToManage() : openSheet({ mode: "plate" });
 }
 function openIng(i) {
   plate.scrollY = window.scrollY || 0;
   sheet = { mode: "ing", idx: i, row: plate.rows[i] };
-  $("sheet-title").textContent = "In the plate"; $("sheet-sub").textContent = SRC[sheet.row.src] || "entered";
+  $("sheet-title").textContent = "In the plate"; $("sheet-sub").textContent = SRC[sheet.row.src] || "entered"; $("sheet-chg").hidden = true; $("sheet-sub").hidden = false;
   show("sheet"); renderIng();
 }
 function renderIng() {
@@ -529,6 +550,7 @@ function renderIng() {
   $("ig-rm").onclick = () => { plate.rows.splice(sheet.idx, 1); sheetBack(); };
 }
 function sheetBack() {
+  if (sheet && (sheet.mode === "manage" || sheet.mode === "follow")) return manageBack();
   if (sheet && sheet.mode === "edit") return show("home");
   if (sheet && sheet.mode === "plate" && plate) { plate.makes = sheet.makes; plate.name = sheet.name; }
   const y = sheet && sheet.mode === "ing" && plate ? plate.scrollY : 0;
@@ -558,6 +580,7 @@ function openSheet(o) {
   if (o.mode === "plate") { const pt = plateTotals(plate.rows); sheet.src = "plate"; sheet.rows = plate.rows; sheet.makes = plate.makes || 1; sheet.name = plate.name || ""; sheet.per = { kcal: pt.kcal, p: pt.p, c: pt.c, f: pt.f }; sheet.servingText = plateServing(sheet.makes, plate.rows.length); }
   $("sheet-title").textContent = o.mode === "pantry" && sheet.src === "usda" && !S.pantry.some(p => p.id === o.item.id) ? "Starter pantry" : { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit", plate: "Build a plate" }[o.mode];
   $("sheet-sub").textContent = o.mode === "typed" ? "entered" : o.mode === "plate" ? plateHead(plate.rows) : (SRC[sheet.src] || "entered");
+  const can = o.mode === "pantry" && S.pantry.some(p => p.id === o.item.id); $("sheet-chg").hidden = !can; $("sheet-sub").hidden = can; $("sheet-chg").onclick = () => openManage(S.pantry.find(p => p.id === o.item.id));
   show("sheet"); renderSheet();
 }
 function sheetTotals() {
@@ -627,6 +650,79 @@ function commitSheet(keepOnly) {
   if (pantryId) { entry.pantryId = pantryId; const item = S.pantry.find(p => p.id === pantryId); if (item) { item.used = (item.used || []).concat(entry.t).slice(-20); } }
   S.entries.push(entry); save();
   $("find").value = ""; toast("Logged, " + clock(entry.t)); show("home");
+}
+
+/* ================= the item's own sheet: In your pantry (ruled Sep 18 2026 — door C, sheets T / U / P, remove, K2) ================= */
+/* It logs nothing: no servings, no hero, no Ate at. Save the changes commits; nothing else does. What was already logged is never touched. */
+function manageHead() { const it = sheet.item; $("sheet-title").textContent = "In your pantry"; $("sheet-sub").textContent = it.plate ? plateHead(sheet.rows) : (SRC[it.src] || "entered"); $("sheet-sub").hidden = false; $("sheet-chg").hidden = true; }
+function openManage(item) {
+  const flat = Object.assign({}, item.per, item.per.x || {}); delete flat.x; for (const k in flat) if (flat[k] == null) flat[k] = "";
+  sheet = { mode: "manage", item, name: item.name, per: flat, makes: item.makes || 1, rows: item.plate ? item.plate.map(rowCopy) : null };
+  show("sheet"); manageHead(); renderManage();
+}
+function managePer() { const p = sheet.per, num = v => v === "" || v == null || isNaN(+v) ? null : +v, g = k => r1(+p[k] || 0), kc = num(p.kcal); return { kcal: kc == null ? kcalFromGrams(g("p"), g("c"), g("f")) : Math.round(kc), p: g("p"), c: g("c"), f: g("f"), x: { fiber: num(p.fiber), sugar: num(p.sugar), sodium: num(p.sodium), satfat: num(p.satfat) } }; }
+function manageItem() {
+  const it = sheet.item, name = sheet.name.trim() || it.name;
+  if (it.plate) return Object.assign({}, it, { name, makes: sheet.makes, plate: sheet.rows, per: platePer(sheet.rows, sheet.makes), serving: plateServing(sheet.makes, sheet.rows.length) });
+  if (it.src === "usda") return it;
+  return Object.assign({}, it, { name, per: managePer() });
+}
+function manageDirty() { return JSON.stringify(manageItem()) !== JSON.stringify(sheet.item); }
+function manageOk() { const p = sheet.per; return !!sheet.name.trim() && (sheet.item.plate ? sheet.rows.length > 0 : (+p.p || +p.c || +p.f || +p.kcal) > 0); }
+function renderManage() {
+  const it = sheet.item, isPlate = !!it.plate, fixedFood = it.src === "usda" && !isPlate, blankK = sheet.per.kcal === "" || sheet.per.kcal == null;
+  const tile = (k, label, unit) => `<div class="cell${k === "kcal" && blankK ? " est" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}" ${fixedFood ? "disabled" : ""}>${unit ? `<span>${unit}</span>` : ""}</div></div>`;
+  const tiles = () => `<div class="per"><div class="rowhead"><span>${SRC[it.src] || "entered"}, per ${esc(it.serving || "serving")}</span><span>${fixedFood ? "" : "tap to change"}</span></div><div class="grid">${tile("kcal", "Calories", "")}${tile("p", "Protein", "g")}${tile("c", "Carbs", "g")}${tile("f", "Fat", "g")}</div><div class="grid">${tile("fiber", "Fiber", "g")}${tile("sugar", "Sugar", "g")}${tile("sodium", "Sodium", "mg")}${tile("satfat", "Sat. fat", "g")}</div><div class="fine" id="est-note" style="margin-top:8px" ${blankK && !fixedFood ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div></div>`;
+  const part = isPlate ? platePartial(sheet.rows) : [];
+  const rows = () => `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>The whole thing makes</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button></span></div>` +
+    `<div class="per"><div class="rowhead"><span>${sheet.rows.length ? builtLine(sheet.rows) : "Nothing in it yet."}</span><span></span></div><div id="ings" style="margin-top:0">` + sheet.rows.map(r => { const g = rowGaps(r, part); return `<div class="ing"><div><div class="in">${esc(r.name)}</div><div class="is">${r.src === "usda" ? "USDA estimate" : "yours"}${g ? " · " + g : ""}</div></div><div class="ia">${amountText(r.unit, r.amount)}</div><div class="ik tn">${fmt(scale(r.per, r.amount).kcal)}<i>kcal</i></div></div>`; }).join("") + `</div></div>` +
+    `<button class="log soft" id="mg-ings" style="margin-top:16px">Change the ingredients</button>`;
+  $("sheet").innerHTML = fixedFood
+    ? `<div class="iname">${esc(it.name)}</div>` + tiles() + `<p class="fine" style="margin:14px 0 0">A starter food keeps USDA's name and numbers. Removed, it goes back to the starter pantry, and Find still has it.</p><button class="log soft" id="mg-rm" style="margin-top:16px">Remove from your pantry</button>`
+    : `<input class="name" id="mg-name" value="${esc(sheet.name)}" placeholder="Name">` + (isPlate ? rows() : tiles()) + `<p class="fine" style="margin:14px 0 0">What you already logged keeps its numbers.</p><button class="log" id="mg-save" ${manageOk() ? "" : "disabled"}>Save the changes</button><button class="quiet" id="mg-rm">Remove from your pantry</button>`;
+  const ok = () => { const b = $("mg-save"); if (b) b.disabled = !manageOk(); };
+  const nm = $("mg-name"); if (nm) nm.oninput = ev => { sheet.name = ev.target.value; ok(); };
+  if (!isPlate && !fixedFood) $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.oninput = () => {                       // in place: nothing redraws under the finger
+    sheet.per[inp.dataset.k] = inp.value; const kc = $("sheet").querySelector('input[data-k="kcal"]'), blank = kc.value === "";
+    kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", blank); $("est-note").hidden = !blank; ok(); }; });
+  if (isPlate) {
+    $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderManage(); };
+    $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderManage(); };
+    $("mg-ings").onclick = () => { plate = { rows: sheet.rows, makes: sheet.makes, name: sheet.name, scrollY: 0, editing: { sheet, exclude: changeExcludes(S.pantry, it.id) } }; $("find").value = ""; show("add"); };
+  }
+  const sv = $("mg-save"); if (sv) sv.onclick = saveManage;
+  $("mg-rm").onclick = removeManage;
+}
+function backToManage() {                                                               // from the change picker: a preview, nothing is saved until Save the changes
+  const st = plate.editing.sheet; st.rows = plate.rows.length ? plate.rows : st.item.plate.map(rowCopy);
+  plate = null; $("find").value = ""; sheet = st; show("sheet"); manageHead(); renderManage();
+}
+function manageBack() {
+  if (sheet.mode === "follow") return show("add");                                      // already saved; leaving is "only this one"
+  if (manageDirty() && !confirm("Leave without saving the changes?")) return;
+  const it = S.pantry.find(p => p.id === sheet.item.id); if (it) openSheet({ mode: "pantry", item: it }); else show("add");
+}
+function saveManage() {
+  if (!manageOk()) return;
+  const was = sheet.item, next = manageItem(), reach = JSON.stringify([next.name, next.per, next.serving]) !== JSON.stringify([was.name, was.per, was.serving]);
+  S.pantry = pantryAfterChange(S.pantry, next, false); save();
+  const holders = reach ? platesHolding(S.pantry, next.id) : [];
+  if (!holders.length) { toast("Saved"); show("add"); return; }
+  sheet = { mode: "follow", item: next, holders }; renderFollow();
+}
+function renderFollow() {                                                               // K2: asked once, every plate named, all of them or none
+  const it = sheet.item, hs = sheet.holders, n = hs.length;
+  $("sheet").innerHTML = `<div class="iname">Saved. ${esc(it.name)} is also in ${n === 1 ? "one" : n} of your plates.</div><div class="inplates">${hs.map(p => `<div>${esc(p.name)}</div>`).join("")}</div>` +
+    `<p class="fine" style="margin:12px 0 0">${n === 1 ? "It holds" : "Each holds"} its own copy from before the change. What you already logged stays as it was either way.</p>` +
+    `<button class="log" id="fw-all">${n === 1 ? "Update that plate too" : "Update all " + n + " plates"}</button><button class="log soft" id="fw-one">Only this ${it.plate ? "plate" : "food"}</button>`;
+  window.scrollTo(0, 0);
+  $("fw-all").onclick = () => { S.pantry = pantryAfterChange(S.pantry, it, true); save(); toast(n === 1 ? "Saved. 1 plate updated." : "Saved. " + n + " plates updated."); show("add"); };
+  $("fw-one").onclick = () => { toast("Saved"); show("add"); };
+}
+function removeManage() {
+  const it = sheet.item, held = platesHolding(S.pantry, it.id).length;
+  if (!confirm("Remove " + it.name + " from your pantry? What you already logged stays as it is." + (held ? " Your plates that use it keep their own copy." : ""))) return;
+  S.pantry = pantryWithout(S.pantry, it.id); save(); toast("Removed from your pantry"); show("add");
 }
 
 /* ================= settings ================= */
