@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0918b · a fuel log, not a diet app.
+  Fuel · build 0918c · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -146,6 +146,7 @@ main[hidden] { display:none; }
 .ate .msr.up { padding:10px 9px; }
 .ate .msr.up svg { transform:rotate(180deg); }
 .ate input[type=text] { font:600 16px var(--fb); letter-spacing:0; }
+.ate input.qty { font:700 16px var(--fd); letter-spacing:-.01em; }
 .seg.units { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
 .seg.units button { padding:10px 0; }
 #ings { margin-top:8px; }
@@ -292,7 +293,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0918b", BUILD_DATE = "Sep 18, 2026";
+const BUILD = "0918c", BUILD_DATE = "Sep 18, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -334,19 +335,24 @@ function repeatOrder(pantry, now) {
 function scale(per, servings) { return { kcal: Math.round((+per.kcal||0) * servings), p: r1((+per.p||0) * servings), c: r1((+per.c||0) * servings), f: r1((+per.f||0) * servings) }; }
 function stepText(n) { const w = Math.floor(n), h = n - w >= 0.5; return (w ? w : "") + (h ? "½" : "") || "0"; }
 /* THE PLATE IS ARITHMETIC: rows in, sums out. Amounts are written in the food's own measure; a row is the plate's own copy. */
-function qtyText(n) { const e = Math.round(n * 8); if (Math.abs(n * 8 - e) < 1e-6) { const w = Math.floor(e / 8), f = e % 8; return (w ? w : "") + (f ? ["", "⅛", "¼", "⅜", "½", "⅝", "¾", "⅞"][f] : "") || "0"; } return String(r1(n)); }
+function qtyText(n) {                                                                  /* eighths first, as always; then thirds and sixths (0918c); else one decimal */
+  const e = Math.round(n * 8); if (Math.abs(n * 8 - e) < 1e-6) { const w = Math.floor(e / 8), f = e % 8; return (w ? w : "") + (f ? ["", "⅛", "¼", "⅜", "½", "⅝", "¾", "⅞"][f] : "") || "0"; }
+  const t = Math.round(n * 6); if (Math.abs(n * 6 - t) < 1e-4) { const w = Math.floor(t / 6), f = t % 6; return (w ? w : "") + ["", "⅙", "⅓", "½", "⅔", "⅚"][f]; }
+  return String(r1(n));
+}
 /* ruled M4 (Sep 18 2026): a typed food's measure is its own words. Known nouns bend as they always did; units and sizes never bend; a word Fuel has never seen gets plain English endings. */
 const MANY = { cup: "cups", slice: "slices", spear: "spears", egg: "eggs", thigh: "thighs", chop: "chops", can: "cans", stalk: "stalks", ear: "ears", fruit: "fruits", avocado: "avocados", cucumber: "cucumbers", serving: "servings", scoop: "scoops", piece: "pieces", bar: "bars" };
 const NOBEND = { oz: 1, g: 1, tbsp: 1, tsp: 1, ml: 1, l: 1, lb: 1, kg: 1, medium: 1, large: 1, small: 1, dry: 1, whole: 1, cooked: 1 };
 function manyWord(w) { const l = w.toLowerCase(); if (MANY[l]) return MANY[l]; for (const k in MANY) if (MANY[k] === l) return w; if (!l || NOBEND[l] || /[^s]s$/.test(l)) return w; if (/[^aeiou]y$/.test(l)) return w.slice(0, -1) + "ies"; if (/(s|x|z|ch|sh)$/.test(l)) return w + "es"; return w + "s"; }
 function oneWord(w) { const l = w.toLowerCase(); for (const k in MANY) if (MANY[k] === l) return k; if (MANY[l] || NOBEND[l] || l.length < 4 || /(us|is)$/.test(l)) return w; if (/ies$/.test(l)) return w.slice(0, -3) + "y"; if (/(ss|x|z|ch|sh)es$/.test(l)) return w.slice(0, -2); if (/[^s]s$/.test(l)) return w.slice(0, -1); return w; }
 const UNITS = ["cup", "oz", "tbsp", "slice", "piece", "scoop", "g"];
-function measureText(q, unit) { const v = +q, w = String(unit == null ? "" : unit).trim().replace(/\s+/g, " "); if (q === "" || q == null || !w || !isFinite(v) || v <= 0) return ""; const sp = w.lastIndexOf(" "); return qtyText(v) + " " + w.slice(0, sp + 1) + (v > 1 ? manyWord(w.slice(sp + 1)) : oneWord(w.slice(sp + 1))); }
+function snapThird(v) { const w = Math.floor(v), f = v - w; return Math.abs(f - 1 / 3) < 0.0051 ? w + 1 / 3 : Math.abs(f - 2 / 3) < 0.0071 ? w + 2 / 3 : v; }
+function measureText(q, unit) { const v = snapThird(+q), w = String(unit == null ? "" : unit).trim().replace(/\s+/g, " "); if (q === "" || q == null || !w || !isFinite(v) || v <= 0) return ""; const sp = w.lastIndexOf(" "); return qtyText(v) + " " + w.slice(0, sp + 1) + (v > 1 ? manyWord(w.slice(sp + 1)) : oneWord(w.slice(sp + 1))); }
 function unitKey(serving) { const w = measureParts(serving || "serving").rest.trim().toLowerCase(), sp = w.lastIndexOf(" "); return w.slice(0, sp + 1) + oneWord(w.slice(sp + 1)); }
-function measureOf(serving) { const t = String(serving || "").trim(), none = { n: "1", unit: "", word: "" }; if (!t || /^servings?$/i.test(t) || /(^| )of /.test(t)) return none; const mp = measureParts(t), w = mp.rest.trim(); if (!w) return none; const key = unitKey(t); return UNITS.includes(key) ? { n: String(mp.q), unit: key, word: "" } : { n: String(mp.q), unit: "other", word: w }; }
+function measureOf(serving) { const t = String(serving || "").trim(), none = { n: "1", unit: "", word: "" }; if (!t || /^servings?$/i.test(t) || /(^| )of /.test(t)) return none; const mp = measureParts(t), w = mp.rest.trim(); if (!w) return none; const key = unitKey(t); return UNITS.includes(key) ? { n: String(Math.round(mp.q * 100) / 100), unit: key, word: "" } : { n: String(Math.round(mp.q * 100) / 100), unit: "other", word: w }; }
 /* K2 with a measure: when the food's measure changes size in the same unit (1 cup → ½ cup), a plate that follows keeps the same amount of food; a different unit keeps the count. */
 function followAmount(r, item) { const a = measureParts(r.unit), b = measureParts(item.serving || "serving"); return unitKey(r.unit) === unitKey(item.serving) && a.q !== b.q ? Math.round(r.amount * a.q / b.q * 1e6) / 1e6 : r.amount; }
-function measureParts(serving) { const m = String(serving || "serving").trim().match(/^(\d+(?:\.\d+)?)?\s*([¼½¾⅛⅜⅝⅞])?\s*([\s\S]*)$/), fr = { "⅛": .125, "¼": .25, "⅜": .375, "½": .5, "⅝": .625, "¾": .75, "⅞": .875 }; const q = (m[1] ? +m[1] : 0) + (m[2] ? fr[m[2]] : 0); return { q: q || 1, rest: m[3] }; }
+function measureParts(serving) { const m = String(serving || "serving").trim().match(/^(\d+(?:\.\d+)?)?\s*([¼½¾⅛⅜⅝⅞⅓⅔⅙⅚])?\s*([\s\S]*)$/), fr = { "⅛": .125, "¼": .25, "⅜": .375, "½": .5, "⅝": .625, "¾": .75, "⅞": .875, "⅓": 1 / 3, "⅔": 2 / 3, "⅙": 1 / 6, "⅚": 5 / 6 }; const q = (m[1] ? +m[1] : 0) + (m[2] ? fr[m[2]] : 0); return { q: q || 1, rest: m[3] }; }
 function amountParts(serving, amount) {
   const mp = measureParts(serving), total = mp.q * amount; let rest = mp.rest;
   if (amount === 1) return { n: qtyText(total), u: rest };
@@ -426,11 +432,11 @@ const PLT = '<svg class="plt" viewBox="0 1 24 21" width="23" height="20" fill="n
 function mark(p) { return p.plate || p.src === "plate" ? PLT : ""; }
 const CARET = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';
 function measNow(m) { return m && m.unit ? measureText(m.n, m.unit === "other" ? m.word : m.unit) : ""; }
-function measUnit(m) { return m.unit ? (+m.n > 1 ? manyWord(m.unit) : m.unit) : "serving"; }
+function measUnit(m) { return m.unit ? (snapThird(+m.n) > 1 ? manyWord(m.unit) : m.unit) : "serving"; }
 function measHtml(m) {
   const row = inner => `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>One serving is</span><span class="t">${inner}</span></div>`;
   if (!m.open) return row(`<button class="msr" id="ms-fold">${esc(measNow(m) || "serving")}${CARET}</button>`);
-  return row(`<input type="number" inputmode="decimal" id="ms-n" value="${esc(m.n)}" style="width:64px;text-align:right" aria-label="How many">` +
+  return row(`<input type="text" inputmode="decimal" class="qty" id="ms-n" value="${esc(m.n)}" style="width:64px;text-align:right" autocomplete="off" aria-label="How many">` +
     (m.unit === "other" ? `<input type="text" id="ms-w" value="${esc(m.word)}" placeholder="link" style="width:96px" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Your own word">` : `<span class="now" id="ms-u">${esc(measUnit(m))}</span>`) +
     `<button class="msr up" id="ms-fold" aria-label="Done with the measure">${CARET}</button>`) +
     `<div class="seg units" style="margin-top:10px">${UNITS.concat("other").map(u => `<button data-u="${u}" aria-pressed="${m.unit === u}">${u}</button>`).join("")}</div>`;
@@ -439,6 +445,8 @@ function wireMeas(box, m, changed) {                                            
   const wire = () => {
     $("ms-fold").onclick = () => { m.open = !m.open; draw(); };
     box.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { m.unit = m.unit === b.dataset.u ? "" : b.dataset.u; draw(); const w = $("ms-w"); if (w) w.focus(); });
+    const pick = el => { try { el.setSelectionRange(0, el.value.length); } catch (e) {} };
+    if ($("ms-n")) $("ms-n").onfocus = ev => { const el = ev.target; pick(el); setTimeout(() => { if (document.activeElement === el) pick(el); }, 0); };
     const q = $("ms-n"); if (q) q.oninput = () => { m.n = q.value; const u = $("ms-u"); if (u) u.textContent = measUnit(m); changed(); };
     const w = $("ms-w"); if (w) w.oninput = () => { m.word = w.value; changed(); };
   };
