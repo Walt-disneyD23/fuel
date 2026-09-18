@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0918a · a fuel log, not a diet app.
+  Fuel · build 0918b · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -141,6 +141,13 @@ main[hidden] { display:none; }
 .inplates { margin-top:12px; border-top:1px solid var(--line); }
 .inplates div { padding:10px 0; border-bottom:1px solid var(--line); font-size:15px; font-weight:600; }
 .pi .pn .plt { vertical-align:-4px; margin-right:8px; color:var(--ink); }
+.ate .msr { display:inline-flex; align-items:center; gap:6px; border:0; background:var(--field); border-radius:10px; padding:8px 12px; font:600 16px var(--fb); color:var(--ink); }
+.ate .msr svg { color:var(--ink2); }
+.ate .msr.up { padding:10px 9px; }
+.ate .msr.up svg { transform:rotate(180deg); }
+.ate input[type=text] { font:600 16px var(--fb); letter-spacing:0; }
+.seg.units { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
+.seg.units button { padding:10px 0; }
 #ings { margin-top:8px; }
 .ing { display:grid; grid-template-columns:minmax(0,1fr) 138px 56px; align-items:center; column-gap:10px; padding:11px 0; border-top:1px solid var(--line); }
 .ing:first-of-type { border-top:0; }
@@ -285,7 +292,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0918a", BUILD_DATE = "Sep 18, 2026";
+const BUILD = "0918b", BUILD_DATE = "Sep 18, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -328,16 +335,25 @@ function scale(per, servings) { return { kcal: Math.round((+per.kcal||0) * servi
 function stepText(n) { const w = Math.floor(n), h = n - w >= 0.5; return (w ? w : "") + (h ? "½" : "") || "0"; }
 /* THE PLATE IS ARITHMETIC: rows in, sums out. Amounts are written in the food's own measure; a row is the plate's own copy. */
 function qtyText(n) { const e = Math.round(n * 8); if (Math.abs(n * 8 - e) < 1e-6) { const w = Math.floor(e / 8), f = e % 8; return (w ? w : "") + (f ? ["", "⅛", "¼", "⅜", "½", "⅝", "¾", "⅞"][f] : "") || "0"; } return String(r1(n)); }
+/* ruled M4 (Sep 18 2026): a typed food's measure is its own words. Known nouns bend as they always did; units and sizes never bend; a word Fuel has never seen gets plain English endings. */
+const MANY = { cup: "cups", slice: "slices", spear: "spears", egg: "eggs", thigh: "thighs", chop: "chops", can: "cans", stalk: "stalks", ear: "ears", fruit: "fruits", avocado: "avocados", cucumber: "cucumbers", serving: "servings", scoop: "scoops", piece: "pieces", bar: "bars" };
+const NOBEND = { oz: 1, g: 1, tbsp: 1, tsp: 1, ml: 1, l: 1, lb: 1, kg: 1, medium: 1, large: 1, small: 1, dry: 1, whole: 1, cooked: 1 };
+function manyWord(w) { const l = w.toLowerCase(); if (MANY[l]) return MANY[l]; for (const k in MANY) if (MANY[k] === l) return w; if (!l || NOBEND[l] || /[^s]s$/.test(l)) return w; if (/[^aeiou]y$/.test(l)) return w.slice(0, -1) + "ies"; if (/(s|x|z|ch|sh)$/.test(l)) return w + "es"; return w + "s"; }
+function oneWord(w) { const l = w.toLowerCase(); for (const k in MANY) if (MANY[k] === l) return k; if (MANY[l] || NOBEND[l] || l.length < 4 || /(us|is)$/.test(l)) return w; if (/ies$/.test(l)) return w.slice(0, -3) + "y"; if (/(ss|x|z|ch|sh)es$/.test(l)) return w.slice(0, -2); if (/[^s]s$/.test(l)) return w.slice(0, -1); return w; }
+const UNITS = ["cup", "oz", "tbsp", "slice", "piece", "scoop", "g"];
+function measureText(q, unit) { const v = +q, w = String(unit == null ? "" : unit).trim().replace(/\s+/g, " "); if (q === "" || q == null || !w || !isFinite(v) || v <= 0) return ""; const sp = w.lastIndexOf(" "); return qtyText(v) + " " + w.slice(0, sp + 1) + (v > 1 ? manyWord(w.slice(sp + 1)) : oneWord(w.slice(sp + 1))); }
+function unitKey(serving) { const w = measureParts(serving || "serving").rest.trim().toLowerCase(), sp = w.lastIndexOf(" "); return w.slice(0, sp + 1) + oneWord(w.slice(sp + 1)); }
+function measureOf(serving) { const t = String(serving || "").trim(), none = { n: "1", unit: "", word: "" }; if (!t || /^servings?$/i.test(t) || /(^| )of /.test(t)) return none; const mp = measureParts(t), w = mp.rest.trim(); if (!w) return none; const key = unitKey(t); return UNITS.includes(key) ? { n: String(mp.q), unit: key, word: "" } : { n: String(mp.q), unit: "other", word: w }; }
+/* K2 with a measure: when the food's measure changes size in the same unit (1 cup → ½ cup), a plate that follows keeps the same amount of food; a different unit keeps the count. */
+function followAmount(r, item) { const a = measureParts(r.unit), b = measureParts(item.serving || "serving"); return unitKey(r.unit) === unitKey(item.serving) && a.q !== b.q ? Math.round(r.amount * a.q / b.q * 1e6) / 1e6 : r.amount; }
 function measureParts(serving) { const m = String(serving || "serving").trim().match(/^(\d+(?:\.\d+)?)?\s*([¼½¾⅛⅜⅝⅞])?\s*([\s\S]*)$/), fr = { "⅛": .125, "¼": .25, "⅜": .375, "½": .5, "⅝": .625, "¾": .75, "⅞": .875 }; const q = (m[1] ? +m[1] : 0) + (m[2] ? fr[m[2]] : 0); return { q: q || 1, rest: m[3] }; }
 function amountParts(serving, amount) {
   const mp = measureParts(serving), total = mp.q * amount; let rest = mp.rest;
   if (amount === 1) return { n: qtyText(total), u: rest };
   rest = rest.replace(/\s*\(\d+ [a-z]+\)/i, "");                                      // "(23 almonds)" is a count of one measure; "(6")" is a size and stays
   if (!/(^| )of /.test(rest)) {
-    const many = { cup: "cups", slice: "slices", spear: "spears", egg: "eggs", thigh: "thighs", chop: "chops", can: "cans", stalk: "stalks", ear: "ears", fruit: "fruits", avocado: "avocados", cucumber: "cucumbers", serving: "servings", scoop: "scoops", piece: "pieces", bar: "bars" };
-    const cut = rest.search(/[,(]/), head = (cut < 0 ? rest : rest.slice(0, cut)).replace(/\s+$/, ""), tail = rest.slice(head.length), sp = head.lastIndexOf(" "), word = head.slice(sp + 1), lw = word.toLowerCase();
-    let bent = word; if (total > 1 && many[lw]) bent = many[lw]; if (total <= 1) { for (const k in many) if (many[k] === lw) bent = k; }
-    rest = head.slice(0, sp + 1) + bent + tail;
+    const cut = rest.search(/[,(]/), head = (cut < 0 ? rest : rest.slice(0, cut)).replace(/\s+$/, ""), tail = rest.slice(head.length), sp = head.lastIndexOf(" "), word = head.slice(sp + 1);
+    rest = head.slice(0, sp + 1) + (total > 1 ? manyWord(word) : oneWord(word)) + tail;
   }
   return { n: qtyText(total), u: rest };
 }
@@ -375,7 +391,7 @@ function platesHolding(pantry, id) {
   return out;
 }
 function rowCopy(r) { return plateRow({ id: r.itemId, name: r.name, serving: r.unit, src: r.src, per: r.per }, r.amount); }
-function refreshPlate(p, fresh) { const rows = p.plate.map(r => fresh[r.itemId] ? plateRow(fresh[r.itemId], r.amount) : rowCopy(r)), makes = p.makes || 1; return Object.assign({}, p, { plate: rows, per: platePer(rows, makes), serving: plateServing(makes, rows.length) }); }
+function refreshPlate(p, fresh) { const rows = p.plate.map(r => fresh[r.itemId] ? plateRow(fresh[r.itemId], followAmount(r, fresh[r.itemId])) : rowCopy(r)), makes = p.makes || 1; return Object.assign({}, p, { plate: rows, per: platePer(rows, makes), serving: plateServing(makes, rows.length) }); }
 function pantryAfterChange(pantry, item, follow) { const fresh = {}; fresh[item.id] = item; let out = pantry.map(p => p.id === item.id ? item : p); if (follow) for (const h of platesHolding(out, item.id)) { const n = refreshPlate(out.find(p => p.id === h.id), fresh); fresh[n.id] = n; out = out.map(p => p.id === n.id ? n : p); } return out; }
 function pantryWithout(pantry, id) { return pantry.filter(p => p.id !== id); }
 function changeExcludes(pantry, id) { return [id].concat(platesHolding(pantry, id).map(p => p.id)); }   /* a plate being changed, and every plate that holds it, stay out of its own picker: no loops */
@@ -408,6 +424,28 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, ch => ({ "&":"&am
 const SRC = { pantry: "from the pantry", label: "read from the label", typed: "entered", usda: "USDA estimate", plate: "built from ingredients" };
 const PLT = '<svg class="plt" viewBox="0 1 24 21" width="23" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g stroke-width="2.2"><ellipse cx="12" cy="11" rx="10.4" ry="5.6"/><ellipse cx="12" cy="10.6" rx="5.6" ry="2.6"/><path d="M2.4 13.6c1.4 3.4 5.2 5.4 9.6 5.4s8.2-2 9.6-5.4"/></g></svg>';
 function mark(p) { return p.plate || p.src === "plate" ? PLT : ""; }
+const CARET = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';
+function measNow(m) { return m && m.unit ? measureText(m.n, m.unit === "other" ? m.word : m.unit) : ""; }
+function measUnit(m) { return m.unit ? (+m.n > 1 ? manyWord(m.unit) : m.unit) : "serving"; }
+function measHtml(m) {
+  const row = inner => `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>One serving is</span><span class="t">${inner}</span></div>`;
+  if (!m.open) return row(`<button class="msr" id="ms-fold">${esc(measNow(m) || "serving")}${CARET}</button>`);
+  return row(`<input type="number" inputmode="decimal" id="ms-n" value="${esc(m.n)}" style="width:64px;text-align:right" aria-label="How many">` +
+    (m.unit === "other" ? `<input type="text" id="ms-w" value="${esc(m.word)}" placeholder="link" style="width:96px" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Your own word">` : `<span class="now" id="ms-u">${esc(measUnit(m))}</span>`) +
+    `<button class="msr up" id="ms-fold" aria-label="Done with the measure">${CARET}</button>`) +
+    `<div class="seg units" style="margin-top:10px">${UNITS.concat("other").map(u => `<button data-u="${u}" aria-pressed="${m.unit === u}">${u}</button>`).join("")}</div>`;
+}
+function wireMeas(box, m, changed) {                                                     // only this block redraws, and only on a tap; typing updates in place
+  const wire = () => {
+    $("ms-fold").onclick = () => { m.open = !m.open; draw(); };
+    box.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { m.unit = m.unit === b.dataset.u ? "" : b.dataset.u; draw(); const w = $("ms-w"); if (w) w.focus(); });
+    const q = $("ms-n"); if (q) q.oninput = () => { m.n = q.value; const u = $("ms-u"); if (u) u.textContent = measUnit(m); changed(); };
+    const w = $("ms-w"); if (w) w.oninput = () => { m.word = w.value; changed(); };
+  };
+  const draw = () => { box.innerHTML = measHtml(m); wire(); changed(); };
+  draw();
+}
+function typedServing() { return measNow(sheet.meas) || (sheet.makes > 1 ? "1 of " + sheet.makes : "serving"); }
 
 /* ================= theme ================= */
 const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -576,7 +614,7 @@ function openSheet(o) {
   if (o.mode === "pantry") { sheet.item = o.item; sheet.name = o.item.name; sheet.per = Object.assign({}, o.item.per, o.item.per.x || {}); sheet.src = o.item.src === "usda" ? "usda" : "pantry"; sheet.servingText = o.item.serving || "serving"; }
   if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
   if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
-  if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; }
+  if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; sheet.meas = { n: "1", unit: "", word: "", open: false }; }
   if (o.mode === "plate") { const pt = plateTotals(plate.rows); sheet.src = "plate"; sheet.rows = plate.rows; sheet.makes = plate.makes || 1; sheet.name = plate.name || ""; sheet.per = { kcal: pt.kcal, p: pt.p, c: pt.c, f: pt.f }; sheet.servingText = plateServing(sheet.makes, plate.rows.length); }
   $("sheet-title").textContent = o.mode === "pantry" && sheet.src === "usda" && !S.pantry.some(p => p.id === o.item.id) ? "Starter pantry" : { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit", plate: "Build a plate" }[o.mode];
   $("sheet-sub").textContent = o.mode === "typed" ? "entered" : o.mode === "plate" ? plateHead(plate.rows) : (SRC[sheet.src] || "entered");
@@ -603,6 +641,7 @@ function renderSheet() {
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
     `<input class="name" id="sh-name" value="${esc(sheet.name)}" placeholder="${whole ? "Name it to keep it in the pantry" : "Name"}">` +
+    (typed ? `<div id="ms"></div>` : "") +
     (whole ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button></span></div>` : "") +
     `<div class="step"><button id="sv-dn" ${sheet.servings <= 0.5 ? "disabled" : ""}>−</button><div class="val"><div class="n">${stepText(sheet.servings)}</div><div class="u">${sheet.servings === 1 ? "serving" : "servings"}${whole ? " eaten" : ", " + esc(sheet.servingText) + " each"}</div></div><button id="sv-up">+</button></div>` +
     `<div class="herot"><div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div></div>` +
@@ -621,6 +660,7 @@ function renderSheet() {
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
   if (whole) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
   $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (isNaN(h)) return; const d = new Date(sheet.at); d.setHours(h, m, 0, 0); if (d > new Date() && sheet.mode !== "edit") d.setDate(d.getDate() - 1); sheet.at = d; renderSheet(); };
+  if (typed) wireMeas($("ms"), sheet.meas, () => {});
   $("sh-log").onclick = () => commitSheet(false);
   const kb = $("sh-keep"); if (kb) kb.onclick = () => commitSheet(true);
   const bl = $("built"); if (bl) bl.onclick = () => { sheet.showIngs = !sheet.showIngs; $("ings").hidden = !sheet.showIngs; bl.querySelector("span").textContent = sheet.showIngs ? "Tap to hide them." : "Tap to see them."; };
@@ -634,10 +674,11 @@ function commitSheet(keepOnly) {
     save(); toast("Saved"); show("home"); return;
   }
   const per = sheet.mode === "plate" ? platePer(sheet.rows, sheet.makes) : { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x };
+  if (sheet.mode === "typed") sheet.servingText = typedServing();
   let pantryId = sheet.item ? sheet.item.id : null;
   if (sheet.item && !S.pantry.some(p => p.id === sheet.item.id)) S.pantry.unshift(sheet.item);
   if (sheet.mode === "typed" && (sheet.keep || keepOnly === true) && name) {
-    const item = { id: uid(), name, serving: sheet.makes > 1 ? "1 of " + sheet.makes : "serving", per, src: "typed", added: Date.now(), used: [] };
+    const item = { id: uid(), name, serving: typedServing(), per, src: "typed", added: Date.now(), used: [] };
     S.pantry.unshift(item); pantryId = item.id; sheet.servingText = item.serving;
   }
   if (sheet.mode === "plate") {
@@ -657,7 +698,7 @@ function commitSheet(keepOnly) {
 function manageHead() { const it = sheet.item; $("sheet-title").textContent = "In your pantry"; $("sheet-sub").textContent = it.plate ? plateHead(sheet.rows) : (SRC[it.src] || "entered"); $("sheet-sub").hidden = false; $("sheet-chg").hidden = true; }
 function openManage(item) {
   const flat = Object.assign({}, item.per, item.per.x || {}); delete flat.x; for (const k in flat) if (flat[k] == null) flat[k] = "";
-  sheet = { mode: "manage", item, name: item.name, per: flat, makes: item.makes || 1, rows: item.plate ? item.plate.map(rowCopy) : null };
+  sheet = { mode: "manage", item, name: item.name, per: flat, makes: item.makes || 1, rows: item.plate ? item.plate.map(rowCopy) : null, meas: Object.assign(measureOf(item.plate || item.src === "usda" ? "" : item.serving), { open: false }) };
   show("sheet"); manageHead(); renderManage();
 }
 function managePer() { const p = sheet.per, num = v => v === "" || v == null || isNaN(+v) ? null : +v, g = k => r1(+p[k] || 0), kc = num(p.kcal); return { kcal: kc == null ? kcalFromGrams(g("p"), g("c"), g("f")) : Math.round(kc), p: g("p"), c: g("c"), f: g("f"), x: { fiber: num(p.fiber), sugar: num(p.sugar), sodium: num(p.sodium), satfat: num(p.satfat) } }; }
@@ -665,21 +706,21 @@ function manageItem() {
   const it = sheet.item, name = sheet.name.trim() || it.name;
   if (it.plate) return Object.assign({}, it, { name, makes: sheet.makes, plate: sheet.rows, per: platePer(sheet.rows, sheet.makes), serving: plateServing(sheet.makes, sheet.rows.length) });
   if (it.src === "usda") return it;
-  return Object.assign({}, it, { name, per: managePer() });
+  return Object.assign({}, it, { name, serving: measNow(sheet.meas) || (measureOf(it.serving).unit ? "serving" : it.serving || "serving"), per: managePer() });
 }
 function manageDirty() { return JSON.stringify(manageItem()) !== JSON.stringify(sheet.item); }
 function manageOk() { const p = sheet.per; return !!sheet.name.trim() && (sheet.item.plate ? sheet.rows.length > 0 : (+p.p || +p.c || +p.f || +p.kcal) > 0); }
 function renderManage() {
   const it = sheet.item, isPlate = !!it.plate, fixedFood = it.src === "usda" && !isPlate, blankK = sheet.per.kcal === "" || sheet.per.kcal == null;
   const tile = (k, label, unit) => `<div class="cell${k === "kcal" && blankK ? " est" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}" ${fixedFood ? "disabled" : ""}>${unit ? `<span>${unit}</span>` : ""}</div></div>`;
-  const tiles = () => `<div class="per"><div class="rowhead"><span>${SRC[it.src] || "entered"}, per ${esc(it.serving || "serving")}</span><span>${fixedFood ? "" : "tap to change"}</span></div><div class="grid">${tile("kcal", "Calories", "")}${tile("p", "Protein", "g")}${tile("c", "Carbs", "g")}${tile("f", "Fat", "g")}</div><div class="grid">${tile("fiber", "Fiber", "g")}${tile("sugar", "Sugar", "g")}${tile("sodium", "Sodium", "mg")}${tile("satfat", "Sat. fat", "g")}</div><div class="fine" id="est-note" style="margin-top:8px" ${blankK && !fixedFood ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div></div>`;
+  const tiles = () => `<div class="per"><div class="rowhead"><span id="mg-per">${SRC[it.src] || "entered"}, per ${esc(manageItem().serving || "serving")}</span><span>${fixedFood ? "" : "tap to change"}</span></div><div class="grid">${tile("kcal", "Calories", "")}${tile("p", "Protein", "g")}${tile("c", "Carbs", "g")}${tile("f", "Fat", "g")}</div><div class="grid">${tile("fiber", "Fiber", "g")}${tile("sugar", "Sugar", "g")}${tile("sodium", "Sodium", "mg")}${tile("satfat", "Sat. fat", "g")}</div><div class="fine" id="est-note" style="margin-top:8px" ${blankK && !fixedFood ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div></div>`;
   const part = isPlate ? platePartial(sheet.rows) : [];
   const rows = () => `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>The whole thing makes</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button></span></div>` +
     `<div class="per"><div class="rowhead"><span>${sheet.rows.length ? builtLine(sheet.rows) : "Nothing in it yet."}</span><span></span></div><div id="ings" style="margin-top:0">` + sheet.rows.map(r => { const g = rowGaps(r, part); return `<div class="ing"><div><div class="in">${esc(r.name)}</div><div class="is">${r.src === "usda" ? "USDA estimate" : "yours"}${g ? " · " + g : ""}</div></div><div class="ia">${amountText(r.unit, r.amount)}</div><div class="ik tn">${fmt(scale(r.per, r.amount).kcal)}<i>kcal</i></div></div>`; }).join("") + `</div></div>` +
     `<button class="log soft" id="mg-ings" style="margin-top:16px">Change the ingredients</button>`;
   $("sheet").innerHTML = fixedFood
     ? `<div class="iname">${esc(it.name)}</div>` + tiles() + `<p class="fine" style="margin:14px 0 0">A starter food keeps USDA's name and numbers. Removed, it goes back to the starter pantry, and Find still has it.</p><button class="log soft" id="mg-rm" style="margin-top:16px">Remove from your pantry</button>`
-    : `<input class="name" id="mg-name" value="${esc(sheet.name)}" placeholder="Name">` + (isPlate ? rows() : tiles()) + `<p class="fine" style="margin:14px 0 0">What you already logged keeps its numbers.</p><button class="log" id="mg-save" ${manageOk() ? "" : "disabled"}>Save the changes</button><button class="quiet" id="mg-rm">Remove from your pantry</button>`;
+    : `<input class="name" id="mg-name" value="${esc(sheet.name)}" placeholder="Name">` + (isPlate ? rows() : `<div id="ms"></div>` + tiles()) + `<p class="fine" style="margin:14px 0 0">What you already logged keeps its numbers.</p><button class="log" id="mg-save" ${manageOk() ? "" : "disabled"}>Save the changes</button><button class="quiet" id="mg-rm">Remove from your pantry</button>`;
   const ok = () => { const b = $("mg-save"); if (b) b.disabled = !manageOk(); };
   const nm = $("mg-name"); if (nm) nm.oninput = ev => { sheet.name = ev.target.value; ok(); };
   if (!isPlate && !fixedFood) $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.oninput = () => {                       // in place: nothing redraws under the finger
@@ -690,6 +731,7 @@ function renderManage() {
     $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderManage(); };
     $("mg-ings").onclick = () => { plate = { rows: sheet.rows, makes: sheet.makes, name: sheet.name, scrollY: 0, editing: { sheet, exclude: changeExcludes(S.pantry, it.id) } }; $("find").value = ""; show("add"); };
   }
+  if (!isPlate && !fixedFood) wireMeas($("ms"), sheet.meas, () => { $("mg-per").textContent = (SRC[it.src] || "entered") + ", per " + (manageItem().serving || "serving"); ok(); });
   const sv = $("mg-save"); if (sv) sv.onclick = saveManage;
   $("mg-rm").onclick = removeManage;
 }
