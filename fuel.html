@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0917j · a fuel log, not a diet app.
+  Fuel · build 0917k · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -139,6 +139,7 @@ main[hidden] { display:none; }
 #ings { margin-top:8px; }
 .ing { display:grid; grid-template-columns:minmax(0,1fr) 138px 56px; align-items:center; column-gap:10px; padding:11px 0; border-top:1px solid var(--line); }
 .ing:first-of-type { border-top:0; }
+.ing:last-child { padding-bottom:0; }
 .ing .in { font-size:15px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ing .is { font-size:12px; color:var(--ink2); margin-top:1px; }
 .ing .ia { font-family:var(--fd); font-weight:700; font-size:14px; text-align:center; font-variant-numeric:tabular-nums; }
@@ -181,6 +182,8 @@ input.name:focus, .ate input:focus, .row input.num:focus { box-shadow:0 0 0 2px 
 .ate .now { font-size:13px; color:var(--ink2); font-weight:500; }
 .log { display:block; width:100%; margin-top:16px; border:0; border-radius:16px; background:var(--acc); color:var(--onacc); font:700 18px var(--fb); padding:16px; }
 .log:disabled { opacity:.4; }
+.log.soft { background:var(--field); color:var(--ink); margin-top:10px; }
+.log[hidden] { display:none; }
 .quiet { display:block; width:100%; margin-top:10px; border:0; border-radius:16px; background:transparent; color:var(--ink2); font:600 15px var(--fb); padding:12px; }
 .row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-top:1px solid var(--line); font-size:15px; }
 .row:first-child { border-top:0; padding-top:0; }
@@ -234,7 +237,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
   <div id="add-body">
   <button class="door" id="door-type"><span><span class="dt">Type it</span><span class="dd" style="display:block">Protein, carbs, fat. Calories auto or your own. Name it to keep it.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
   <button class="door" id="door-plate"><span><span class="dt">Build a plate</span><span class="dd" style="display:block">Find each ingredient, tap +. Fuel adds it up and keeps the plate.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
-  <div class="sect" id="repeat-head">Repeat</div>
+  <div class="sect" id="repeat-head">Your pantry</div>
   <div id="repeat"></div>
   </div>
 </main>
@@ -277,7 +280,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0917j", BUILD_DATE = "Sep 17, 2026";
+const BUILD = "0917k", BUILD_DATE = "Sep 17, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -426,7 +429,7 @@ function renderAdd() {
   const pantry = repeatOrder(S.pantry, now);
   const yest = S.entries.filter(e => dayKey(e.t) === yk).sort((a, b) => new Date(a.t) - new Date(b.t));
   let html = "";
-  if (!pantry.length && !yest.length) html = `<p class="fine" style="margin:0 4px">Nothing to repeat yet. Name what you type and it lands here; yesterday's entries show here too.</p>`;
+  if (!pantry.length && !yest.length) html = `<p class="fine" style="margin:0 4px">Nothing in your pantry yet. Name what you type and it lands here; yesterday's entries show here too.</p>`;
   pantry.forEach(p => { html += `<button class="pi" data-p="${p.id}"><span><span class="pn">${esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`; });
   if (yest.length) { html += `<div class="sect">Yesterday</div>`; yest.forEach(e => { html += `<button class="pi" data-y="${e.id}"><span><span class="pn">${esc(e.name || "Untitled")}</span><span class="ps" style="display:block">${clock(e.t)} yesterday, ${SRC[e.src] || "entered"}</span></span><span class="pk tn">${fmt(e.kcal)}<span>kcal</span></span></button>`; }); }
   $("repeat").innerHTML = html;
@@ -444,7 +447,7 @@ function renderFind() {
   const mine = S.pantry.filter(hit), have = new Set(S.pantry.map(p => p.id)), starter = STARTER.filter(p => !have.has(p.id) && hit(p));
   const card = (p, attr) => `<button class="pi" ${attr}="${p.id}"><span><span class="pn">${markHit(p.name, q)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`;
   let html = "";
-  if (mine.length) html += `<div class="sect">Yours</div>` + mine.map(p => card(p, "data-p")).join("");
+  if (mine.length) html += `<div class="sect">Your pantry</div>` + mine.map(p => card(p, "data-p")).join("");
   if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(p => card(p, "data-s")).join("");
   if (!html) html = `<p class="fine" style="margin:14px 4px 0">Nothing called that yet. Type it and name it, and it will be here next time.</p>`;
   R.innerHTML = html;
@@ -477,7 +480,7 @@ function renderPicker() {
   const mine = (q ? S.pantry : repeatOrder(S.pantry, new Date())).filter(hit), have = new Set(S.pantry.map(p => p.id)), starter = q ? STARTER.filter(p => !have.has(p.id) && hit(p)) : [];
   const card = p => `<button class="pi pick" data-add="${p.id}"><span><span class="pn">${q ? markHit(p.name, q) : esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span><span class="plus" aria-hidden="true">+</span></button>`;
   let html = "";
-  if (mine.length) html += `<div class="sect">Yours</div>` + mine.map(card).join("");
+  if (mine.length) html += `<div class="sect">Your pantry</div>` + mine.map(card).join("");
   if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(card).join("");
   if (!mine.length && !starter.length) html += `<p class="fine" style="margin:14px 4px 0">${q ? "Nothing called that yet. Type it and name it first, and it can go in a plate." : (plate.rows.length ? "Find the next ingredient, or you're done." : "Find each ingredient by name and tap +. Fuel adds the plate up.")}</p>`;
   if (plate.rows.length) html += `<div class="sect">In the plate</div>` + plate.rows.map((r, i) => `<div class="pi on"><button class="pt" data-open="${i}"><span class="pn" style="display:block">${esc(r.name)}</span><span class="ps" style="display:block" id="rs-${i}">${rowSub(r)}</span></button><span class="amt"><button class="plus mn" data-dn="${i}" aria-label="Less" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><button class="plus" data-up="${i}" aria-label="More">+</button></span></div>`).join("");
@@ -574,19 +577,21 @@ function renderSheet() {
     (whole ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
     `<div class="ate"><span>Ate at</span><span class="t"><input type="time" id="sh-time" value="${hh}:${mm}">${isNow ? `<span class="now">now</span>` : ""}</span></div>` +
     `<button class="log" id="sh-log" ${canLog ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>` +
+    (whole ? `<button class="log soft" id="sh-keep" ${canLog ? "" : "disabled"} ${sheet.name.trim() ? "" : "hidden"}>Add to your pantry only</button>` : "") +
     (sheet.mode === "edit" ? `<button class="quiet" id="sh-del">Delete this entry</button>` : "");
-  $("sh-name").oninput = ev => { sheet.name = ev.target.value; const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } const kl = $("keep-lbl"); if (kl) kl.textContent = "Keep in the pantry" + (sheet.name.trim() ? "" : " (name it first)"); };
+  $("sh-name").oninput = ev => { sheet.name = ev.target.value; const ko = $("sh-keep"); if (ko) ko.hidden = !sheet.name.trim(); const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } const kl = $("keep-lbl"); if (kl) kl.textContent = "Keep in the pantry" + (sheet.name.trim() ? "" : " (name it first)"); };
   $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.disabled = !editable; inp.oninput = () => { sheet.per[inp.dataset.k] = inp.value; refreshTotals(); }; });
   $("sv-dn").onclick = () => { sheet.servings = Math.max(0.5, sheet.servings - 0.5); renderSheet(); };
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
   if (whole) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
   $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (isNaN(h)) return; const d = new Date(sheet.at); d.setHours(h, m, 0, 0); if (d > new Date() && sheet.mode !== "edit") d.setDate(d.getDate() - 1); sheet.at = d; renderSheet(); };
-  $("sh-log").onclick = commitSheet;
+  $("sh-log").onclick = () => commitSheet(false);
+  const kb = $("sh-keep"); if (kb) kb.onclick = () => commitSheet(true);
   const bl = $("built"); if (bl) bl.onclick = () => { sheet.showIngs = !sheet.showIngs; $("ings").hidden = !sheet.showIngs; bl.querySelector("span").textContent = sheet.showIngs ? "Tap to hide them." : "Tap to see them."; };
   const del = $("sh-del"); if (del) del.onclick = () => { if (!confirm("Delete " + (sheet.name || "this entry") + "?")) return; S.entries = S.entries.filter(e => e.id !== sheet.entry.id); save(); toast("Deleted"); show("home"); };
 }
-function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div>`; const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
-function commitSheet() {
+function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
+function commitSheet(keepOnly) {
   const t = sheetTotals(), name = sheet.name.trim();
   if (sheet.mode === "edit") {
     const e = sheet.entry; Object.assign(e, t.tot, { name, t: sheet.at.toISOString(), est: t.est }); if (e.per) e.servings = sheet.servings; else e.per = undefined;
@@ -595,15 +600,16 @@ function commitSheet() {
   const per = sheet.mode === "plate" ? platePer(sheet.rows, sheet.makes) : { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x };
   let pantryId = sheet.item ? sheet.item.id : null;
   if (sheet.item && !S.pantry.some(p => p.id === sheet.item.id)) S.pantry.unshift(sheet.item);
-  if (sheet.mode === "typed" && sheet.keep && name) {
+  if (sheet.mode === "typed" && (sheet.keep || keepOnly === true) && name) {
     const item = { id: uid(), name, serving: sheet.makes > 1 ? "1 of " + sheet.makes : "serving", per, src: "typed", added: Date.now(), used: [] };
     S.pantry.unshift(item); pantryId = item.id; sheet.servingText = item.serving;
   }
   if (sheet.mode === "plate") {
     sheet.servingText = plateServing(sheet.makes, sheet.rows.length);
-    if (sheet.keep && name) { const item = { id: uid(), name, serving: sheet.servingText, per, src: "plate", added: Date.now(), used: [], makes: sheet.makes, plate: sheet.rows.map(r => plateRow({ id: r.itemId, name: r.name, serving: r.unit, src: r.src, per: r.per }, r.amount)) }; S.pantry.unshift(item); pantryId = item.id; }
+    if ((sheet.keep || keepOnly === true) && name) { const item = { id: uid(), name, serving: sheet.servingText, per, src: "plate", added: Date.now(), used: [], makes: sheet.makes, plate: sheet.rows.map(r => plateRow({ id: r.itemId, name: r.name, serving: r.unit, src: r.src, per: r.per }, r.amount)) }; S.pantry.unshift(item); pantryId = item.id; }
     plate = null;
   }
+  if (keepOnly === true) { if (!name) return; save(); $("find").value = ""; toast("In your pantry. Nothing logged."); show("add"); return; }
   const entry = Object.assign({ id: uid(), t: sheet.at.toISOString(), src: sheet.mode === "typed" ? "typed" : (sheet.src || "typed"), name, servings: sheet.servings, per, servingText: sheet.servingText, est: t.est }, t.tot);
   if (pantryId) { entry.pantryId = pantryId; const item = S.pantry.find(p => p.id === pantryId); if (item) { item.used = (item.used || []).concat(entry.t).slice(-20); } }
   S.entries.push(entry); save();
