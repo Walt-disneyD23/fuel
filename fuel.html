@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0918l · a fuel log, not a diet app.
+  Fuel · build 0918m · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -306,7 +306,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0918l", BUILD_DATE = "Sep 18, 2026";
+const BUILD = "0918m", BUILD_DATE = "Sep 18, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -414,7 +414,8 @@ function refreshPlate(p, fresh) { const rows = p.plate.map(r => fresh[r.itemId] 
 function pantryAfterChange(pantry, item, follow) { const fresh = {}; fresh[item.id] = item; let out = pantry.map(p => p.id === item.id ? item : p); if (follow) for (const h of platesHolding(out, item.id)) { const n = refreshPlate(out.find(p => p.id === h.id), fresh); fresh[n.id] = n; out = out.map(p => p.id === n.id ? n : p); } return out; }
 function pantryWithout(pantry, id) { return pantry.filter(p => p.id !== id); }
 function changeExcludes(pantry, id) { return [id].concat(platesHolding(pantry, id).map(p => p.id)); }   /* a plate being changed, and every plate that holds it, stay out of its own picker: no loops */
-function stripTop(off) { const v = Math.round(+off); return v > 0 ? v : 0; }                         /* 0918e: the clock's strip follows the part of the page you can see */
+function kbIsUp(vh, sh) { return +vh < +sh - 120; }                                                    /* 0918i's test, proven on his glass: the part of the page you can see is much shorter than the screen */
+function stripTop(off, kb) { const v = Math.round(+off); return kb && v > 0 ? v : 0; }                         /* 0918e: the clock's strip follows the part of the page you can see */
 /* 0918j — net carbs: carbs minus fiber, nothing else. A fiber nobody typed is unknown, never zero: on a food that means no net carbs; across a day the entry counts all its carbs and is counted as a gap (G2). */
 function netCarbs(c, fiber) { if (c == null || c === "" || fiber == null || fiber === "" || isNaN(+c) || isNaN(+fiber)) return null; return Math.max(0, r1(+c - +fiber)); }
 function dayNet(entries) { let c = 0, fib = 0, gaps = 0; for (const e of entries) { const ec = +e.c || 0, f = e.x ? e.x.fiber : null; c += ec; if (f == null || f === "" || isNaN(+f)) { if (ec > 0) gaps++; } else fib += Math.min(Math.max(0, +f), ec); } return { c: r1(c), fiber: r1(fib), net: r1(c - fib), gaps: gaps }; }
@@ -838,14 +839,14 @@ $("export").onclick = async () => {
 /* 0918i: the bar is not drawn while a keyboard is up. Nothing moves. Off the moment a typing field takes focus; back once no typing field has focus and the keyboard has gone. */
 (function () { const vv = window.visualViewport, B = document.body; let t = 0;
   const typing = el => !!el && ((el.tagName === "INPUT" && el.type !== "time" && el.type !== "checkbox") || el.tagName === "TEXTAREA") && !el.closest("[hidden]");   /* a box on a screen that has been put away is not being typed in, whatever still claims the focus */
-  const kbUp = () => !!vv && vv.height < window.screen.height - 120;
+  const kbUp = () => !!vv && kbIsUp(vv.height, window.screen.height);
   const back = () => { clearTimeout(t); if (typing(document.activeElement)) return; if (kbUp()) { t = setTimeout(back, 600); return; } B.classList.remove("typing"); };
   document.addEventListener("focusin", ev => { if (typing(ev.target)) { clearTimeout(t); B.classList.add("typing"); } });
   document.addEventListener("focusout", () => { clearTimeout(t); t = setTimeout(back, vv ? 500 : 50); });
   if (vv) vv.addEventListener("resize", () => { if (B.classList.contains("typing")) back(); });
   document.addEventListener("click", () => { if (B.classList.contains("typing")) { clearTimeout(t); t = setTimeout(back, 50); } });   /* a field that is removed while it has focus (Log it, Save) may never say it lost it: THE BAR ALWAYS COMES BACK */
 })();
-(function () { const vv = window.visualViewport, el = $("strip"); if (!vv || !el) return; const put = () => { el.style.transform = "translateY(" + stripTop(vv.offsetTop) + "px)"; }; vv.addEventListener("resize", put); vv.addEventListener("scroll", put); put(); })();
+(function () { const vv = window.visualViewport, el = $("strip"); if (!vv || !el) return; const put = () => { el.style.transform = "translateY(" + stripTop(vv.offsetTop, kbIsUp(vv.height, window.screen.height)) + "px)"; }; vv.addEventListener("resize", put); vv.addEventListener("scroll", put); put(); })();
 applyTheme(); show("home");
 setInterval(() => { if (view === "home") renderHome(); }, 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && view === "home") renderHome(); });
