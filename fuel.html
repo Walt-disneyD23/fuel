@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0918m · a fuel log, not a diet app.
+  Fuel · build 0918n · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -175,7 +175,7 @@ main[hidden] { display:none; }
 .step.small .val .n { font-size:26px; }
 .herot { display:flex; justify-content:space-between; align-items:flex-end; margin-top:18px; }
 .herot .big { font-size:56px; }
-.herot .big span { font-family:var(--fb); font-size:15px; font-weight:600; color:var(--ink2); margin-left:4px; }
+.herot .big span { font-family:var(--fb); font-size:15px; font-weight:600; color:var(--ink2); margin-left:7px; letter-spacing:0; }
 .herot .macros { text-align:right; font-size:14px; color:var(--ink2); line-height:1.5; font-variant-numeric:tabular-nums; }
 .herot .macros b { color:var(--ink); font-weight:600; }
 .per { margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
@@ -306,7 +306,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0918m", BUILD_DATE = "Sep 18, 2026";
+const BUILD = "0918n", BUILD_DATE = "Sep 18, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -362,6 +362,11 @@ const UNITS = ["cup", "oz", "tbsp", "slice", "piece", "scoop", "g"];
 function snapThird(v) { const w = Math.floor(v), f = v - w; return Math.abs(f - 1 / 3) < 0.0051 ? w + 1 / 3 : Math.abs(f - 2 / 3) < 0.0071 ? w + 2 / 3 : v; }
 function measureText(q, unit) { const v = snapThird(+q), w = String(unit == null ? "" : unit).trim().replace(/\s+/g, " "); if (q === "" || q == null || !w || !isFinite(v) || v <= 0) return ""; const sp = w.lastIndexOf(" "); return qtyText(v) + " " + w.slice(0, sp + 1) + (v > 1 ? manyWord(w.slice(sp + 1)) : oneWord(w.slice(sp + 1))); }
 function unitKey(serving) { const w = measureParts(serving || "serving").rest.trim().toLowerCase(), sp = w.lastIndexOf(" "); return w.slice(0, sp + 1) + oneWord(w.slice(sp + 1)); }
+function bareServing(t) { const s = String(t == null ? "" : t).trim(); return !s || /^servings?$/i.test(s) || /^1 serving, a plate of \d+$/.test(s); }      /* 1a: a measure that is just the word, or a plate that makes 1 */
+function batchOf(t) { const m = String(t == null ? "" : t).trim().match(/^1 of (\d+)\b/); return m ? +m[1] : 0; }                                    /* P2: a plate that makes N, or the old typed "1 of N" */
+function perWords(t) { return bareServing(t) || batchOf(t) ? "serving" : String(t).trim(); }                                                        /* T1: "per serving"; a real measure keeps its words */
+function eatenLine(t, servings) { const many = servings === 1 ? "serving" : "servings", b = batchOf(t); return b ? "of " + b + " servings" : bareServing(t) ? many : many + ", " + amountText(String(t).trim(), servings); }      /* 1a, B, P2: the grey line under the big stepper */
+function foldWords(makes, meas) { const m = String(meas || "").trim(); return makes > 1 ? makes + " servings" + (m ? " of " + m : "") : (m || "1 serving"); }      /* Y1: what the one quiet row says */
 function measureOf(serving) { const t = String(serving || "").trim(), none = { n: "1", unit: "", word: "" }; if (!t || /^servings?$/i.test(t) || /(^| )of /.test(t)) return none; const mp = measureParts(t), w = mp.rest.trim(); if (!w) return none; const key = unitKey(t); return UNITS.includes(key) ? { n: String(Math.round(mp.q * 100) / 100), unit: key, word: "" } : { n: String(Math.round(mp.q * 100) / 100), unit: "other", word: w }; }
 /* K2 with a measure: when the food's measure changes size in the same unit (1 cup → ½ cup), a plate that follows keeps the same amount of food; a different unit keeps the count. */
 function followAmount(r, item) { const a = measureParts(r.unit), b = measureParts(item.serving || "serving"); return unitKey(r.unit) === unitKey(item.serving) && a.q !== b.q ? Math.round(r.amount * a.q / b.q * 1e6) / 1e6 : r.amount; }
@@ -688,14 +693,15 @@ function renderSheet() {
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
     `<input class="name" id="sh-name" value="${esc(sheet.name)}" placeholder="${whole ? "Name it to keep it in the pantry" : "Name"}">` +
-    (typed ? `<div id="ms"></div>` : "") +
-    (whole ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button></span></div>` : "") +
-    `<div class="step"><button id="sv-dn" ${sheet.servings <= 0.5 ? "disabled" : ""}>−</button><div class="val"><div class="n">${stepText(sheet.servings)}</div><div class="u">${sheet.servings === 1 ? "serving" : "servings"}${whole ? " eaten" : ", " + esc(sheet.servingText) + " each"}</div></div><button id="sv-up">+</button></div>` +
+    (whole && !sheet.topOpen ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing is" : "What you typed is"}</span><span class="t"><button class="msr" id="top-fold">${esc(foldWords(sheet.makes, typed ? measNow(sheet.meas) : ""))}${CARET}</button></span></div>` : "") +
+    (typed && sheet.topOpen ? `<div id="ms"></div>` : "") +
+    (whole && sheet.topOpen ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button>${isPlate ? `<button class="msr up" id="top-up" aria-label="Done" style="width:auto;height:auto;font-size:inherit">${CARET}</button>` : ""}</span></div>` : "") +
+    `<div class="step"><button id="sv-dn" ${sheet.servings <= 0.5 ? "disabled" : ""}>−</button><div class="val"><div class="n">${stepText(sheet.servings)}</div><div class="u">${whole && sheet.topOpen ? (sheet.servings === 1 ? "serving" : "servings") + " eaten" : esc(eatenLine(typed ? typedServing() : isPlate ? plateServing(sheet.makes, sheet.rows.length) : sheet.servingText, sheet.servings))}</div></div><button id="sv-up">+</button></div>` +
     `<div class="herot"><div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div></div>` +
-    builtHtml(prow, isPlate ? roTiles(platePer(sheet.rows, sheet.makes), platePartial(sheet.rows), "built from ingredients, per " + plateServing(sheet.makes, sheet.rows.length)) : "") +
-    (isPlate ? "" : `<div class="per"><div class="rowhead"><span>${typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(sheet.servingText)}</span><span>${editable ? "tap to change" : ""}</span></div>` +
+    builtHtml(prow, isPlate ? roTiles(platePer(sheet.rows, sheet.makes), platePartial(sheet.rows), "built from ingredients, per " + perWords(plateServing(sheet.makes, sheet.rows.length))) : "") +
+    (isPlate ? "" : `<div class="per"><div class="rowhead"><span>${typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(perWords(sheet.servingText))}</span><span>${editable ? "tap to change" : ""}</span></div>` +
     `<div class="grid">${cell("kcal", "Calories", "")}${cell("p", "Protein", "g")}${cell("c", "Carbs", "g")}${cell("f", "Fat", "g")}</div><div class="grid">${cell("fiber", "Fiber", "g")}${cell("sugar", "Sugar", "g")}${cell("sodium", "Sodium", "mg")}${cell("satfat", "Sat. fat", "g")}</div>` +
-    `<div id="net-note">${netNote(t.basis.c, t.basis.x.fiber, part.includes("fiber"), typed ? "per serving" : "per " + sheet.servingText, typed)}</div>` +
+    `<div id="net-note">${netNote(t.basis.c, t.basis.x.fiber, part.includes("fiber"), "per " + perWords(typed ? "" : sheet.servingText), typed)}</div>` +
     `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div>${part.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`) +
     (whole ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
     `<div class="ate"><span>Ate at</span><span class="t"><input type="time" id="sh-time" value="${hh}:${mm}">${isNow ? `<span class="now">now</span>` : ""}</span></div>` +
@@ -706,15 +712,17 @@ function renderSheet() {
   $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.disabled = !editable; inp.oninput = () => { sheet.per[inp.dataset.k] = inp.value; refreshTotals(); }; });
   $("sv-dn").onclick = () => { sheet.servings = Math.max(0.5, sheet.servings - 0.5); renderSheet(); };
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
-  if (whole) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
+  if (whole && !sheet.topOpen) $("top-fold").onclick = () => { sheet.topOpen = true; if (typed) sheet.meas.open = true; renderSheet(); };
+  if (whole && sheet.topOpen && isPlate) $("top-up").onclick = () => { sheet.topOpen = false; renderSheet(); };
+  if (whole) { if (sheet.topOpen) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; } const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
   $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (isNaN(h)) return; const d = new Date(sheet.at); d.setHours(h, m, 0, 0); if (d > new Date() && sheet.mode !== "edit") d.setDate(d.getDate() - 1); sheet.at = d; renderSheet(); };
-  if (typed) wireMeas($("ms"), sheet.meas, () => {});
+  if (typed && sheet.topOpen) wireMeas($("ms"), sheet.meas, () => { if (!sheet.meas.open) { sheet.topOpen = false; renderSheet(); } });
   $("sh-log").onclick = () => commitSheet(false);
   const kb = $("sh-keep"); if (kb) kb.onclick = () => commitSheet(true);
   const bl = $("built"); if (bl) bl.onclick = () => { sheet.showIngs = !sheet.showIngs; $("ings").hidden = !sheet.showIngs; bl.querySelector("span").textContent = sheet.showIngs ? "Tap to hide them." : "Tap to see them."; };
   const del = $("sh-del"); if (del) del.onclick = () => { if (!confirm("Delete " + (sheet.name || "this entry") + "?")) return; S.entries = S.entries.filter(e => e.id !== sheet.entry.id); save(); toast("Deleted"); show("home"); };
 }
-function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), sheet.mode === "typed" ? "per serving" : "per " + sheet.servingText, sheet.mode === "typed"); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
+function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), "per " + perWords(sheet.mode === "typed" ? "" : sheet.servingText), sheet.mode === "typed"); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
 function commitSheet(keepOnly) {
   const t = sheetTotals(), name = sheet.name.trim();
   if (sheet.mode === "edit") {
