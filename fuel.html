@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0919a · a fuel log, not a diet app.
+  Fuel · build 0919b · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -152,8 +152,6 @@ main[hidden] { display:none; }
 .top.dn { align-items:center; }
 .dpill { display:inline-flex; align-items:center; gap:6px; border:0; background:var(--field); border-radius:10px; padding:8px 12px; font:600 15px var(--fb); color:var(--ink); }
 .dpill svg, .cv { color:var(--ink2); }
-.tdy { border:0; background:transparent; color:var(--ink2); font:600 15px var(--fb); padding:6px 0 6px 10px; }
-.log.soft.addto { margin-top:14px; }
 .sect.first { text-align:center; margin:22px 4px 6px; }
 .cv { display:inline-flex; transition:transform .15s; } .pi.wk.open .cv { transform:rotate(180deg); }
 .pi.wk[disabled] { opacity:1; cursor:default; }
@@ -265,7 +263,6 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
   <section class="card" id="tally"></section>
   <div class="spinehead"><span class="title" id="spinetitle">Today</span><span class="sub" id="spinesub"></span></div>
   <div class="list" id="spine"></div>
-  <div id="spine-after"></div>
 </main>
 
 <!-- ============ DAYS: look back (ruled D2 + G3 + W3) ============ -->
@@ -329,7 +326,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0919a", BUILD_DATE = "Sep 19, 2026";
+const BUILD = "0919b", BUILD_DATE = "Sep 19, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -470,7 +467,7 @@ function monthDay(k, long) { const x = keyDate(k); return x.toLocaleDateString("
 function spanWords(a, b, long) { return a.slice(0, 7) === b.slice(0, 7) ? monthDay(a, long) + " – " + keyDate(b).getDate() : monthDay(a, false) + " – " + monthDay(b, false); }
 function weekLabel(mon) { return spanWords(mon, dayShift(mon, 6), false); }
 function runWords(from, to, n) { return { name: spanWords(from, to, true), sub: "nothing logged, " + n + " days" }; }
-function addToWords(k) { return "Add to " + weekdayOf(k); }
+function addTarget(view, viewDay, addDay, today) { const d = view === "add" ? addDay : view === "home" || view === "sheet" ? viewDay : null; return d && d < today ? d : null; }      /* P1: the + acts on the day you are looking at; null is today. Days and Settings are not a day. Never the future. */
 function addHeadWords(k) { return "to " + dayName(k); }
 function daysList(entries, now) {                                                                   /* G3: this week Monday → today, then whole weeks, newest first; the list ends at the first entry */
   const today = dayKey(now); let first = null;
@@ -565,7 +562,7 @@ mq.addEventListener("change", applyTheme);
 const VIEWS = ["home", "days", "add", "sheet", "settings"];
 let view = "home";
 function show(v) { view = v; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v === "days" ? "home" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "days") renderDays(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
-$("nav-home").onclick = () => { viewDay = null; addDay = null; show("home"); }; $("nav-add").onclick = () => { addDay = null; show("add"); }; $("nav-settings").onclick = () => show("settings");
+$("nav-home").onclick = () => { viewDay = null; addDay = null; show("home"); }; $("nav-add").onclick = () => { addDay = addTarget(view, viewDay, addDay, dayKey(new Date())); show("add"); }; $("nav-settings").onclick = () => { viewDay = null; addDay = null; show("settings"); };
 let toastT; function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1800); }
 
 /* ================= today ================= */
@@ -584,16 +581,15 @@ function renderHome() {
   const past = viewDay, day = past || tk, es = dayEntries(day), tot = totals(es), tg = S.targets, tg2 = past ? pastGoLine(tot, tg) : toGoLine(tot, tg), read = past ? pastRead(es, tg) : readLine(tot, tg, now);
   const bar = (name, v, t) => `<div class="m"><div class="mrow"><span class="mname">${name}</span><span class="mval">${macroVal(v, t)}</span></div><div class="track"><div class="fill" style="width:${t ? Math.min(100, v / t * 100) : 0}%"></div></div></div>`;
   $("tally").innerHTML =
-    `<div class="top dn"><button class="dpill" id="day-pill">${dayName(day)}${CARET}</button>${past ? `<button class="tdy" id="go-today">Today</button>` : `<span class="tn">${clock(now)}</span>`}</div>` +
+    `<div class="top dn"><button class="dpill" id="day-pill">${dayName(day)}${CARET}</button>${past ? "" : `<span class="tn">${clock(now)}</span>`}</div>` +
     `<div class="hero"><div class="kcal"><span class="big">${fmt(tot.kcal)}</span><span class="unit">kcal</span></div><div class="togo">${tg2.lead ? `<strong>${tg2.lead}</strong> ` : ""}${tg2.tail}</div></div>` +
     bar("Protein", tot.p, tg.p) + carbBar(es, tot, tg) + bar("Fat", tot.f, tg.f) +
     (read ? `<div class="read">${esc(read)}</div>` : "") +
     (S.targetsSet ? "" : `<div class="notice">These targets are a starting point. <a href="#" id="go-targets">Set yours in Settings</a>.</div>`);
   const cf = $("carb-flip"); if (cf) { const flip = () => { S.carbFace = S.carbFace === "carbs" ? "net" : "carbs"; save(); renderHome(); }; cf.onclick = flip; cf.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); flip(); } }; }
   const g = $("go-targets"); if (g) g.onclick = ev => { ev.preventDefault(); show("settings"); };
-  $("day-pill").onclick = () => show("days"); const gt = $("go-today"); if (gt) gt.onclick = () => { viewDay = null; show("home"); };
+  $("day-pill").onclick = () => show("days"); if (view === "home") { if (past) $("nav-home").removeAttribute("aria-current"); else $("nav-home").setAttribute("aria-current", "page"); }
   $("spinetitle").textContent = past ? weekdayOf(past) : "Today";
-  $("spine-after").innerHTML = past ? `<button class="log soft addto" id="add-to">${esc(addToWords(past))}</button>` : ""; const ab = $("add-to"); if (ab) ab.onclick = () => { addDay = past; show("add"); };
   $("spinesub").textContent = es.length ? `${es.length} ${es.length === 1 ? "entry" : "entries"}, ${fmt(tot.kcal)} kcal` : "";
   if (!es.length) { $("spine").innerHTML = past ? `<div class="empty">Nothing was logged.</div>` : `<div class="empty">Nothing yet. The day starts with the first entry.</div>`; return; }
   let html = `<div class="rail"></div>`;
