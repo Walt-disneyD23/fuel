@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0919b · a fuel log, not a diet app.
+  Fuel · build 0919c · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -162,7 +162,10 @@ main[hidden] { display:none; }
 .dr .pk { font-family:var(--fd); font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; } .dr .pk span { font-family:var(--fb); font-size:12px; font-weight:600; color:var(--ink2); margin-left:3px; }
 .wr { display:inline-flex; align-items:center; gap:14px; } .wst { display:inline-flex; align-items:flex-end; gap:4px; height:24px; }
 .wst i { display:block; width:6px; border-radius:2px; background:var(--acc); } .wst i.b-p { opacity:.45; } .wst i.b-e { background:var(--ink2); opacity:.35; }
-.late { margin-top:8px; text-align:right; text-wrap:balance; }.ate input[type=text] { font:600 16px var(--fb); letter-spacing:0; }
+.late { margin-top:8px; text-align:right; text-wrap:balance; }
+.ate .tw { position:relative; display:inline-flex; } .ate .tw .setit { display:none; position:absolute; inset:0; align-items:center; justify-content:center; font:600 15px var(--fb); color:var(--ink2); pointer-events:none; white-space:nowrap; }
+.ate .tw.unset input { min-width:118px; min-height:38px; color:transparent; } .ate .tw.unset .setit { display:flex; }
+.ate input[type=text] { font:600 16px var(--fb); letter-spacing:0; }
 .ate input.qty { font:700 16px var(--fd); letter-spacing:-.01em; }
 .seg.units { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
 .seg.units button { padding:10px 0; }
@@ -326,7 +329,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0919b", BUILD_DATE = "Sep 19, 2026";
+const BUILD = "0919c", BUILD_DATE = "Sep 20, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -498,6 +501,7 @@ function pastRead(entries, tg) {                                                
   return (by ? "Protein was done by " + by + "." : "Protein ended " + fmt(tg.p - tot.p) + " g under.") + overSentence(tot, tg);
 }
 function clampAte(d, now) { const x = new Date(d), n = new Date(now); return x > n ? { at: n, late: true } : { at: x, late: false }; }       /* no logging into the future (the owner's own ruling): now or earlier, and never silently yesterday */
+function ateLabel(at, openedAt, isEdit, timeSet, now) { const k = dayKey(at); if (k !== dayKey(now)) return dayWord(k); return timeSet && !isEdit && Math.abs(new Date(at) - new Date(openedAt)) < 60000 ? "now" : ""; }      /* the seat beside Ate at: the day when it is not today, "now" on a new entry still at the time it opened */
 function lateNote(isEdit) { return "That's later than now." + (isEdit ? "" : " To add to another day, open it from Days."); }
 /* @fuel:pure:end */
 
@@ -781,7 +785,7 @@ function sheetTotals() {
 function netHero(tot) { return netOn() && +tot.c > 0 ? `<span class="co">Net carbs <b>${netHeroText(tot.c, tot.x ? tot.x.fiber : null)}</b></span><br>` : ""; }      /* F1, H2 */
 function netNote(c, fiber, partial, per, canType) { if (!netOn()) return ""; const p = netNoteParts(c, fiber, partial, canType); return p ? `<div class="netnote">Net carbs <b>${p.n}</b> ${esc(per)} <span>${p.why}</span></div>` : ""; }      /* F2, Z3 */
 function renderSheet() {
-  const t = sheetTotals(), tot = t.tot, typed = sheet.mode === "typed", isPlate = sheet.mode === "plate", whole = typed || isPlate, prow = isPlate ? sheet.rows : (sheet.item && sheet.item.plate) || null, editable = typed || sheet.mode === "edit" && !sheet.entry.per, isNow = sheet.timeSet && Math.abs(sheet.at - sheet.openedAt) < 60000 && sheet.mode !== "edit", offDay = dayKey(sheet.at) !== dayKey(new Date()) ? dayWord(dayKey(sheet.at)) : "";
+  const t = sheetTotals(), tot = t.tot, typed = sheet.mode === "typed", isPlate = sheet.mode === "plate", whole = typed || isPlate, prow = isPlate ? sheet.rows : (sheet.item && sheet.item.plate) || null, editable = typed || sheet.mode === "edit" && !sheet.entry.per, ateWords = ateLabel(sheet.at, sheet.openedAt, sheet.mode === "edit", sheet.timeSet, new Date());
   const part = prow && !isPlate ? platePartial(prow) : [];
   const cell = (k, label, unit) => part.includes(k) ? `<div class="cell${netOn() && k === "fiber" ? " co" : ""}"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${k === "kcal" && t.est ? " est" : ""}${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
   const canLog = (+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0;
@@ -799,7 +803,7 @@ function renderSheet() {
     `<div id="net-note">${netNote(t.basis.c, t.basis.x.fiber, part.includes("fiber"), "per " + perWords(typed ? "" : sheet.servingText), typed)}</div>` +
     `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div>${part.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`) +
     (whole ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
-    `<div class="ate"><span>Ate at</span><span class="t"><input type="time" id="sh-time" value="${sheet.timeSet ? hh + ":" + mm : ""}">${offDay ? `<span class="now">${offDay}</span>` : isNow ? `<span class="now">now</span>` : ""}</span></div>` +
+    `<div class="ate"><span>Ate at</span><span class="t"><span class="tw${sheet.timeSet ? "" : " unset"}"><input type="time" id="sh-time" value="${sheet.timeSet ? hh + ":" + mm : ""}"><span class="setit">set a time</span></span>${ateWords ? `<span class="now">${esc(ateWords)}</span>` : ""}</span></div>` +
     (sheet.late ? `<div class="fine late" id="late-note">${esc(lateNote(sheet.mode === "edit"))}</div>` : "") +
     `<button class="log" id="sh-log" ${canLog && sheet.timeSet ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>` +
     (whole ? `<button class="log soft" id="sh-keep" ${canLog ? "" : "disabled"} ${sheet.name.trim() ? "" : "hidden"}>Add to your pantry only</button>` : "") +
@@ -811,12 +815,21 @@ function renderSheet() {
   if (whole && !sheet.topOpen) $("top-fold").onclick = () => { sheet.topOpen = true; if (typed) sheet.meas.open = true; renderSheet(); };
   if (whole && sheet.topOpen && isPlate) $("top-up").onclick = () => { sheet.topOpen = false; renderSheet(); };
   if (whole) { if (sheet.topOpen) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; } const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
-  $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (isNaN(h)) { if (sheet.day) sheet.timeSet = false; renderSheet(); return; } const d = new Date(sheet.at); d.setHours(h, m, 0, 0); const c = clampAte(d, new Date()); sheet.at = c.at; sheet.late = c.late; sheet.timeSet = true; if (c.late && sheet.mode !== "edit") sheet.openedAt = new Date(c.at); renderSheet(); };
+  $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (!ev.target.value || isNaN(h) || isNaN(m)) { if (sheet.day) sheet.timeSet = false; refreshAte(); return; } const d = new Date(sheet.at); d.setHours(h, m, 0, 0); const c = clampAte(d, new Date()); sheet.at = c.at; sheet.late = c.late; sheet.timeSet = true; if (c.late && sheet.mode !== "edit") sheet.openedAt = new Date(c.at); refreshAte(); };
   if (typed && sheet.topOpen) wireMeas($("ms"), sheet.meas, () => { if (!sheet.meas.open) { sheet.topOpen = false; renderSheet(); } });
   $("sh-log").onclick = () => commitSheet(false);
   const kb = $("sh-keep"); if (kb) kb.onclick = () => commitSheet(true);
   const bl = $("built"); if (bl) bl.onclick = () => { sheet.showIngs = !sheet.showIngs; $("ings").hidden = !sheet.showIngs; bl.querySelector("span").textContent = sheet.showIngs ? "Tap to hide them." : "Tap to see them."; };
   const del = $("sh-del"); if (del) del.onclick = () => { if (!confirm("Delete " + (sheet.name || "this entry") + "?")) return; S.entries = S.entries.filter(e => e.id !== sheet.entry.id); save(); toast("Deleted"); show("home"); };
+}
+function refreshAte() {                                  /* 0919c: patches the Ate at row in place. The time input is NEVER rebuilt by its own change: on iOS that pulled the wheel down the moment it came up. */
+  const ti = $("sh-time"); if (!ti) return; const tw = ti.parentNode, seat = tw.parentNode, two = v => String(v).padStart(2, "0");
+  const v = sheet.timeSet ? two(sheet.at.getHours()) + ":" + two(sheet.at.getMinutes()) : ""; if (ti.value !== v) ti.value = v;
+  tw.classList.toggle("unset", !sheet.timeSet);
+  const words = ateLabel(sheet.at, sheet.openedAt, sheet.mode === "edit", sheet.timeSet, new Date()); let lab = seat.querySelector(".now");
+  if (words) { if (!lab) { lab = document.createElement("span"); lab.className = "now"; seat.appendChild(lab); } lab.textContent = words; } else if (lab) lab.remove();
+  let ln = $("late-note"); if (sheet.late) { if (!ln) { ln = document.createElement("div"); ln.className = "fine late"; ln.id = "late-note"; seat.parentNode.after(ln); } ln.textContent = lateNote(sheet.mode === "edit"); } else if (ln) ln.remove();
+  refreshTotals();
 }
 function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), "per " + perWords(sheet.mode === "typed" ? "" : sheet.servingText), sheet.mode === "typed"); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0) || sheet.timeSet === false; }
 function commitSheet(keepOnly) {
