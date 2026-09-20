@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0918n · a fuel log, not a diet app.
+  Fuel · build 0919a · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -148,7 +148,23 @@ main[hidden] { display:none; }
 .ate .msr svg { color:var(--ink2); }
 .ate .msr.up { padding:10px 9px; }
 .ate .msr.up svg { transform:rotate(180deg); }
-.ate input[type=text] { font:600 16px var(--fb); letter-spacing:0; }
+/* ---------- Look back (0919a; ruled Sep 19 2026 from fuel-lookback-mock.html: D2, G3, W3, A1). The dress is the mock's. ---------- */
+.top.dn { align-items:center; }
+.dpill { display:inline-flex; align-items:center; gap:6px; border:0; background:var(--field); border-radius:10px; padding:8px 12px; font:600 15px var(--fb); color:var(--ink); }
+.dpill svg, .cv { color:var(--ink2); }
+.tdy { border:0; background:transparent; color:var(--ink2); font:600 15px var(--fb); padding:6px 0 6px 10px; }
+.log.soft.addto { margin-top:14px; }
+.sect.first { text-align:center; margin:22px 4px 6px; }
+.cv { display:inline-flex; transition:transform .15s; } .pi.wk.open .cv { transform:rotate(180deg); }
+.pi.wk[disabled] { opacity:1; cursor:default; }
+.wkc { background:var(--card); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; } .wkc + .wkc { margin-top:8px; }
+.wkc .pi { background:transparent; box-shadow:none; border-radius:0; }
+.dr { display:flex; align-items:center; justify-content:space-between; width:100%; border:0; border-top:1px solid var(--line); background:transparent; padding:12px 16px; text-align:left; color:var(--ink); font-family:var(--fb); }
+.dr .pn { font-size:15px; font-weight:600; } .dr .ps { font-size:13px; color:var(--ink2); margin-top:2px; }
+.dr .pk { font-family:var(--fd); font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; } .dr .pk span { font-family:var(--fb); font-size:12px; font-weight:600; color:var(--ink2); margin-left:3px; }
+.wr { display:inline-flex; align-items:center; gap:14px; } .wst { display:inline-flex; align-items:flex-end; gap:4px; height:24px; }
+.wst i { display:block; width:6px; border-radius:2px; background:var(--acc); } .wst i.b-p { opacity:.45; } .wst i.b-e { background:var(--ink2); opacity:.35; }
+.late { margin-top:8px; text-align:right; text-wrap:balance; }.ate input[type=text] { font:600 16px var(--fb); letter-spacing:0; }
 .ate input.qty { font:700 16px var(--fd); letter-spacing:-.01em; }
 .seg.units { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
 .seg.units button { padding:10px 0; }
@@ -247,10 +263,16 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 <div id="shell">
 <main id="v-home">
   <section class="card" id="tally"></section>
-  <div class="spinehead"><span class="title">Today</span><span class="sub" id="spinesub"></span></div>
+  <div class="spinehead"><span class="title" id="spinetitle">Today</span><span class="sub" id="spinesub"></span></div>
   <div class="list" id="spine"></div>
+  <div id="spine-after"></div>
 </main>
 
+<!-- ============ DAYS: look back (ruled D2 + G3 + W3) ============ -->
+<main id="v-days" hidden>
+  <div class="head"><button class="back" id="days-back" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title">Days</span></div>
+  <div id="days"></div>
+</main>
 <!-- ============ ADD: the doors ============ -->
 <main id="v-add" hidden>
   <div class="head" id="add-head"><span class="title">Add</span></div>
@@ -287,10 +309,11 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
   <section class="card">
     <div class="row"><span>Look</span><span class="seg" id="theme"><button data-t="light">Light</button><button data-t="auto">Auto</button><button data-t="dark">Dark</button></span></div>
     <div class="row"><span>Version</span><span class="rv" id="version"></span></div>
+    <div class="row" id="keep-row" hidden><span>Storage</span><span class="rv" id="kept"></span></div>
     <div class="row"><span>Export</span><button class="quiet" style="width:auto;margin:0;padding:8px 12px;background:var(--field);color:var(--ink)" id="export">Save a copy</button></div>
   </section>
   <section class="card about">
-    <b>What Fuel keeps, and where.</b> Your entries, your pantry and your targets live on this phone only. This build sends nothing anywhere. A saved copy is a plain text file of the same.<br><br>
+    <b>What Fuel keeps, and where.</b> Your entries, your pantry and your targets live on this phone only. This build sends nothing anywhere. A saved copy is a plain text file of the same. Fuel asks the phone to keep them even when it runs low on space; Storage, above, shows what the phone answered.<br><br>
     <b>How the read works.</b> The sentence on the tally is arithmetic on what you logged, your targets and the clock. Fuel never guesses what you ate.<br><br>
     <b>The clock is the meal.</b> Every entry keeps the time it was eaten. There are no meal names.
   </section>
@@ -306,7 +329,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0918n", BUILD_DATE = "Sep 18, 2026";
+const BUILD = "0919a", BUILD_DATE = "Sep 19, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -320,13 +343,16 @@ function kcalFromGrams(p, c, f) { return Math.round((+p||0)*4 + (+c||0)*4 + (+f|
 function gapText(min) { if (min < 60) return ""; const h = Math.floor(min/60), m = min % 60; return h + " h" + (m ? " " + m + " m" : "") + " between"; }
 function sinceText(min) { const h = Math.floor(min/60), m = min % 60; return (h ? h + " h " : "") + m + " m since the last entry"; }
 /* THE READ IS ARITHMETIC: entries, targets and the clock in; one sentence out. Never inferred. */
-function readLine(tot, tg, now) {
-  if (!tot.n) return "Nothing logged yet today.";
+function overSentence(tot, tg) {
   const overs = [];
   if (tot.f > tg.f) overs.push({ k:"Fat", g: tot.f - tg.f });
   if (tot.c > tg.c) overs.push({ k:"Carbs", g: tot.c - tg.c });
   overs.sort((a,b) => b.g - a.g);
-  const overClause = overs.length ? " " + overs[0].k + " ran " + fmt(overs[0].g) + " g over." : (tot.kcal > tg.kcal ? " Calories ran " + fmt(tot.kcal - tg.kcal) + " over." : "");
+  return overs.length ? " " + overs[0].k + " ran " + fmt(overs[0].g) + " g over." : (tot.kcal > tg.kcal ? " Calories ran " + fmt(tot.kcal - tg.kcal) + " over." : "");
+}
+function readLine(tot, tg, now) {
+  if (!tot.n) return "Nothing logged yet today.";
+  const overClause = overSentence(tot, tg);
   if (tot.p >= tg.p) return "Protein's done for the day." + overClause;
   const x = new Date(now); const mins = x.getHours()*60 + x.getMinutes();
   const expected = Math.max(0, Math.min(1, (mins - 6*60) / (16*60)));      // the eating day, 6 AM to 10 PM
@@ -433,6 +459,49 @@ function netNoteParts(c, fiber, partial, canType) {                             
 }
 function netHeroText(c, fiber) { return (netCarbs(c, fiber) == null ? "up to " : "") + fmt(netShown(c, fiber)) + " g"; }      /* H2: the big block's row, whole grams by R1's rule; an unknown fiber reads "up to" all the carbs */
 function netFill(d, t) { if (!(t > 0)) return { net: 0, fiber: 0 }; const all = Math.min(100, d.c / t * 100), net = Math.min(all, d.net / t * 100); return { net: net, fiber: all - net }; }
+/* LOOK BACK (0919a; ruled Sep 19 2026: D2, weeks start Monday, G3, W3, K1, R1 provisionally, A1, no logging into the future). A FINISHED DAY SPEAKS IN THE PAST TENSE: nothing below says "to go", "pace" or "it's". */
+function keyDate(k) { const a = String(k).split("-").map(Number); return new Date(a[0], a[1] - 1, a[2], 12, 0, 0, 0); }                 /* noon, so a day never slips when the clocks change */
+function dayShift(k, n) { const x = keyDate(k); x.setDate(x.getDate() + n); return dayKey(x); }
+function weekStart(d) { const k = /^\d{4}-\d\d-\d\d$/.test(String(d)) ? String(d) : dayKey(d); return dayShift(k, -((keyDate(k).getDay() + 6) % 7)); }      /* ruled: weeks start on Monday */
+function dayName(k) { return keyDate(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }); }
+function dayWord(k) { return keyDate(k).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); }            /* the sheet's Ate at row, in the seat where "now" sits */
+function weekdayOf(k) { return keyDate(k).toLocaleDateString("en-US", { weekday: "long" }); }
+function monthDay(k, long) { const x = keyDate(k); return x.toLocaleDateString("en-US", { month: long ? "long" : "short" }) + " " + x.getDate(); }
+function spanWords(a, b, long) { return a.slice(0, 7) === b.slice(0, 7) ? monthDay(a, long) + " – " + keyDate(b).getDate() : monthDay(a, false) + " – " + monthDay(b, false); }
+function weekLabel(mon) { return spanWords(mon, dayShift(mon, 6), false); }
+function runWords(from, to, n) { return { name: spanWords(from, to, true), sub: "nothing logged, " + n + " days" }; }
+function addToWords(k) { return "Add to " + weekdayOf(k); }
+function addHeadWords(k) { return "to " + dayName(k); }
+function daysList(entries, now) {                                                                   /* G3: this week Monday → today, then whole weeks, newest first; the list ends at the first entry */
+  const today = dayKey(now); let first = null;
+  for (const e of entries) { const k = dayKey(e.t); if (k <= today && (first == null || k < first)) first = k; }
+  const stop = first == null ? today : first, mon = weekStart(today), thisWeek = [], weeks = [];
+  for (let k = today; k >= mon && k >= stop; k = dayShift(k, -1)) thisWeek.push(k);
+  for (let w = dayShift(mon, -7); dayShift(w, 6) >= stop; w = dayShift(w, -7)) { const days = []; for (let k = dayShift(w, 6); k >= w && k >= stop; k = dayShift(k, -1)) days.push(k); weeks.push(days); }
+  return { thisWeek, weeks, first };
+}
+function foldEmpty(days, keep) {                                                                    /* a run of three or more empty days is one row; today (keep) always has its own */
+  const out = [], empty = x => !x.n && x.key !== keep; let i = 0;
+  while (i < days.length) { let j = i; while (j < days.length && empty(days[j])) j++; if (j - i >= 3) { out.push({ run: true, from: days[j - 1].key, to: days[i].key, days: j - i }); i = j; } else { out.push({ key: days[i].key, n: days[i].n }); i++; } }
+  return out;
+}
+function weekBar(tot, tg) { return { word: "protein", v: tot.p, t: tg.p }; }                        /* W3's measure, PROVISIONAL (the owner, Sep 19: held for the wrap). ONE function: change the measure here and the words follow; return null and the tiles ship without bars. */
+function weekTile(days7, tg) {                                                                      /* days7: the day's totals(), Monday → Sunday */
+  const logged = days7.filter(t => t.n).length; if (!logged) return { logged: 0, words: "nothing logged", bars: null };
+  const ms = days7.map(t => t.n ? weekBar(t, tg) : null), any = ms.find(Boolean);
+  if (!any) return { logged, words: logged + " of 7 days logged", bars: null };
+  return { logged, words: logged + " of 7 days, " + any.word + " reached on " + ms.filter(b => b && b.v >= b.t).length, bars: ms.map(b => !b ? { k: "none", h: 3 } : b.v >= b.t ? { k: "full", h: 24 } : { k: "part", h: Math.max(5, Math.round(24 * Math.min(1, b.t ? b.v / b.t : 1))) }) };
+}
+function dayTileWords(tot, isToday) { if (!tot.n) return isToday ? "today, nothing logged yet" : "nothing logged"; return (isToday ? "today, " : "") + tot.n + (tot.n === 1 ? " entry" : " entries") + (isToday ? " so far" : "") + ", Protein " + fmt(tot.p) + " g"; }
+function pastGoLine(tot, tg) { return tot.kcal > tg.kcal ? toGoLine(tot, tg) : { lead: "", tail: "of " + fmt(tg.kcal) }; }                /* K1: a finished day that ended under says just the target; an over keeps its number */
+function doneBy(entries, tg) { let run = 0; for (const e of entries.slice().sort((a, b) => new Date(a.t) - new Date(b.t))) { run += +e.p || 0; if (run >= tg.p) return clock(e.t); } return null; }      /* the time on the entry at which the running protein reached target */
+function pastRead(entries, tg) {                                                                    /* R1, PROVISIONAL (the owner, Sep 19: "if it bugs me later, we can change it back to R3"). R3 is one line here: return ""; */
+  if (!entries.length) return "Nothing logged.";
+  const tot = totals(entries), by = doneBy(entries, tg);
+  return (by ? "Protein was done by " + by + "." : "Protein ended " + fmt(tg.p - tot.p) + " g under.") + overSentence(tot, tg);
+}
+function clampAte(d, now) { const x = new Date(d), n = new Date(now); return x > n ? { at: n, late: true } : { at: x, late: false }; }       /* no logging into the future (the owner's own ruling): now or earlier, and never silently yesterday */
+function lateNote(isEdit) { return "That's later than now." + (isEdit ? "" : " To add to another day, open it from Days."); }
 /* @fuel:pure:end */
 
 /* ================= the starter pantry — USDA SR28 via fuel-pantry-seed.json; change both together ================= */
@@ -493,10 +562,10 @@ function applyTheme() { const dark = S.theme === "dark" || (S.theme === "auto" &
 mq.addEventListener("change", applyTheme);
 
 /* ================= views ================= */
-const VIEWS = ["home", "add", "sheet", "settings"];
+const VIEWS = ["home", "days", "add", "sheet", "settings"];
 let view = "home";
-function show(v) { view = v; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
-$("nav-home").onclick = () => show("home"); $("nav-add").onclick = () => show("add"); $("nav-settings").onclick = () => show("settings");
+function show(v) { view = v; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v === "days" ? "home" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "days") renderDays(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
+$("nav-home").onclick = () => { viewDay = null; addDay = null; show("home"); }; $("nav-add").onclick = () => { addDay = null; show("add"); }; $("nav-settings").onclick = () => show("settings");
 let toastT; function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1800); }
 
 /* ================= today ================= */
@@ -511,18 +580,22 @@ function carbBar(es, tot, tg) {                                                 
   return `<div class="m flip" id="carb-flip" role="button" tabindex="0" aria-label="Net carbs. Tap to show carbs.">${plain("Net carbs" + SWAP, fmt(shown) + " g", two, `<div class="netline">${esc(netLine(d, t))}</div>`)}</div>`;
 }
 function renderHome() {
-  const now = new Date(), es = todayEntries(now), tot = totals(es), tg = S.targets, tg2 = toGoLine(tot, tg);
+  const now = new Date(), tk = dayKey(now); if (viewDay === tk) viewDay = null;
+  const past = viewDay, day = past || tk, es = dayEntries(day), tot = totals(es), tg = S.targets, tg2 = past ? pastGoLine(tot, tg) : toGoLine(tot, tg), read = past ? pastRead(es, tg) : readLine(tot, tg, now);
   const bar = (name, v, t) => `<div class="m"><div class="mrow"><span class="mname">${name}</span><span class="mval">${macroVal(v, t)}</span></div><div class="track"><div class="fill" style="width:${t ? Math.min(100, v / t * 100) : 0}%"></div></div></div>`;
   $("tally").innerHTML =
-    `<div class="top"><span>${now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span><span class="tn">${clock(now)}</span></div>` +
-    `<div class="hero"><div class="kcal"><span class="big">${fmt(tot.kcal)}</span><span class="unit">kcal</span></div><div class="togo"><strong>${tg2.lead}</strong> ${tg2.tail}</div></div>` +
+    `<div class="top dn"><button class="dpill" id="day-pill">${dayName(day)}${CARET}</button>${past ? `<button class="tdy" id="go-today">Today</button>` : `<span class="tn">${clock(now)}</span>`}</div>` +
+    `<div class="hero"><div class="kcal"><span class="big">${fmt(tot.kcal)}</span><span class="unit">kcal</span></div><div class="togo">${tg2.lead ? `<strong>${tg2.lead}</strong> ` : ""}${tg2.tail}</div></div>` +
     bar("Protein", tot.p, tg.p) + carbBar(es, tot, tg) + bar("Fat", tot.f, tg.f) +
-    `<div class="read">${esc(readLine(tot, tg, now))}</div>` +
+    (read ? `<div class="read">${esc(read)}</div>` : "") +
     (S.targetsSet ? "" : `<div class="notice">These targets are a starting point. <a href="#" id="go-targets">Set yours in Settings</a>.</div>`);
   const cf = $("carb-flip"); if (cf) { const flip = () => { S.carbFace = S.carbFace === "carbs" ? "net" : "carbs"; save(); renderHome(); }; cf.onclick = flip; cf.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); flip(); } }; }
   const g = $("go-targets"); if (g) g.onclick = ev => { ev.preventDefault(); show("settings"); };
+  $("day-pill").onclick = () => show("days"); const gt = $("go-today"); if (gt) gt.onclick = () => { viewDay = null; show("home"); };
+  $("spinetitle").textContent = past ? weekdayOf(past) : "Today";
+  $("spine-after").innerHTML = past ? `<button class="log soft addto" id="add-to">${esc(addToWords(past))}</button>` : ""; const ab = $("add-to"); if (ab) ab.onclick = () => { addDay = past; show("add"); };
   $("spinesub").textContent = es.length ? `${es.length} ${es.length === 1 ? "entry" : "entries"}, ${fmt(tot.kcal)} kcal` : "";
-  if (!es.length) { $("spine").innerHTML = `<div class="empty">Nothing yet. The day starts with the first entry.</div>`; return; }
+  if (!es.length) { $("spine").innerHTML = past ? `<div class="empty">Nothing was logged.</div>` : `<div class="empty">Nothing yet. The day starts with the first entry.</div>`; return; }
   let html = `<div class="rail"></div>`;
   es.forEach((e, i) => {
     if (i) { const gm = Math.round((new Date(e.t) - new Date(es[i-1].t)) / 60000); const px = Math.max(10, Math.min(72, gm / 60 * 18)); html += `<div class="gap" style="height:${px}px">${gapText(gm)}</div>`; }
@@ -530,10 +603,35 @@ function renderHome() {
     html += `<button class="e" data-id="${e.id}"><div><div class="r1"><span class="when tn">${clock(e.t)}<span>${SRC[e.src] || "entered"}${e.est ? ", calories estimated" : ""}</span></span><span class="k">${fmt(e.kcal)}<span>kcal</span></span></div><div class="ename">${esc(e.name || "Untitled")}</div></div><div><div class="bar"><i class="p" style="width:${(e.p||0)*4/kc*100}%"></i><i class="c" style="width:${(e.c||0)*4/kc*100}%"></i><i class="f" style="width:${(e.f||0)*9/kc*100}%"></i></div><div class="g"><span>Protein <b>${fmt(e.p)} g</b></span><span>Carbs <b>${fmt(e.c)} g</b></span><span>Fat <b>${fmt(e.f)} g</b></span></div></div></button>`;
   });
   const since = Math.max(0, Math.round((now - new Date(es[es.length-1].t)) / 60000));
-  html += `<div class="nowrow">Now ${clock(now)}<span>${sinceText(since)}</span></div>`;
+  if (!past) html += `<div class="nowrow">Now ${clock(now)}<span>${sinceText(since)}</span></div>`;
   $("spine").innerHTML = html;
   $("spine").querySelectorAll(".e").forEach(b => b.onclick = () => openSheet({ mode: "edit", entry: S.entries.find(e => e.id === b.dataset.id) }));
 }
+
+/* ================= look back: Days, a finished day, something you forgot (0919a) ================= */
+let viewDay = null, addDay = null; const daysOpen = {};                                   /* viewDay: the past day on screen (null is today) · addDay: the past day Add is logging to (A1; null is today) · both live in memory only */
+function dayEntries(k) { return S.entries.filter(e => dayKey(e.t) === k).sort((a, b) => new Date(a.t) - new Date(b.t)); }
+function renderDays() {
+  const now = new Date(), tk = dayKey(now), L = daysList(S.entries, now), tg = S.targets, memo = {}, tot = k => memo[k] || (memo[k] = totals(dayEntries(k)));
+  const words = (name, sub, right) => `<span><span class="pn">${name}</span><span class="ps" style="display:block">${sub}</span></span>${right}`;
+  const tile = (k, cls) => { const t = tot(k); return `<button class="${cls}" data-d="${k}">${words(dayName(k), dayTileWords(t, k === tk), t.n ? `<span class="pk tn">${fmt(t.kcal)}<span>kcal</span></span>` : "")}</button>`; };
+  const rows = (keys, cls) => foldEmpty(keys.map(k => ({ key: k, n: tot(k).n })), tk).map(r => {
+    if (!r.run) return tile(r.key, cls);
+    if (daysOpen["r" + r.from]) { let out = ""; for (let k = r.to; k >= r.from; k = dayShift(k, -1)) out += tile(k, cls); return out; }
+    const w = runWords(r.from, r.to, r.days); return `<button class="${cls}" data-run="${r.from}">${words(w.name, w.sub, `<span class="cv">${CARET}</span>`)}</button>`; }).join("");
+  const week = w => { const mon = weekStart(w[0]), t = weekTile([0, 1, 2, 3, 4, 5, 6].map(i => tot(dayShift(mon, i))), tg), open = !!daysOpen[mon];
+    if (!t.logged) return `<div class="wkc"><button class="pi wk" disabled>${words(weekLabel(mon), t.words, "")}</button></div>`;
+    const bars = t.bars ? `<span class="wst" aria-hidden="true">${t.bars.map(b => `<i class="${{ full: "b-f", part: "b-p", none: "b-e" }[b.k]}" style="height:${b.h}px"></i>`).join("")}</span>` : "";
+    return `<div class="wkc"><button class="pi wk fold${open ? " open" : ""}" data-w="${mon}" aria-expanded="${open}">${words(weekLabel(mon), t.words, `<span class="wr">${bars}<span class="cv">${CARET}</span></span>`)}</button>${open ? `<div class="wkd2">${rows(w, "dr")}</div>` : ""}</div>`; };
+  $("days").innerHTML = `<div class="sect">This week</div>` + rows(L.thisWeek, "pi") + (L.weeks.length ? `<div class="sect">Earlier</div>` + L.weeks.map(week).join("") : "") + (L.first ? `<div class="sect first">Your first entry was ${dayName(L.first)}.</div>` : "");
+  $("days").querySelectorAll("[data-d]").forEach(b => b.onclick = () => { viewDay = b.dataset.d === tk ? null : b.dataset.d; show("home"); });
+  $("days").querySelectorAll("[data-w]").forEach(b => b.onclick = () => { daysOpen[b.dataset.w] = !daysOpen[b.dataset.w]; renderDays(); });
+  $("days").querySelectorAll("[data-run]").forEach(b => b.onclick = () => { daysOpen["r" + b.dataset.run] = true; renderDays(); });
+}
+$("days-back").onclick = () => show("home");
+/* Storage: ask once for persistent mode (WebKit weighs whether this is a Home Screen web app). Guarded; Settings says what came back. */
+let kept = null;
+try { if (navigator.storage && navigator.storage.persist && navigator.storage.persisted) navigator.storage.persisted().then(p => p || navigator.storage.persist()).then(p => { kept = !!p; if (view === "settings") renderSettings(); }).catch(() => {}); } catch (e) {}
 
 /* ================= add: the doors ================= */
 function renderAdd() {
@@ -579,7 +677,7 @@ function rowSub(r) { return amountText(r.unit, r.amount) + ", " + fmt(scale(r.pe
 function alreadyIn(q) { const hit = plate.rows.filter(r => r.name.toLowerCase().includes(q)); return !hit.length ? "" : hit.length === 1 ? esc(hit[0].name) + " is already in the plate." : "Those are already in the plate."; }
 function loopNote(q, shut) { const p = S.pantry.find(x => shut.has(x.id) && x.name.toLowerCase().includes(q)); return !p ? "" : plate.editing && p.id === plate.editing.sheet.item.id ? "A plate can't go inside itself." : esc(p.name) + " already holds this plate."; }
 function renderAddHead() {
-  $("add-head").innerHTML = plate ? `<button class="back" id="plate-back" aria-label="Back">${$("sheet-back").innerHTML}</button><span class="title">${plate.editing ? "Change the ingredients" : "Build a plate"}</span><span class="sub" id="plate-sub">${plateHead(plate.rows)}</span>` : `<span class="title">Add</span>`;
+  $("add-head").innerHTML = plate ? `<button class="back" id="plate-back" aria-label="Back">${$("sheet-back").innerHTML}</button><span class="title">${plate.editing ? "Change the ingredients" : "Build a plate"}</span><span class="sub" id="plate-sub">${plateHead(plate.rows)}</span>` : `<span class="title">Add</span>${addDay ? `<span class="sub">${esc(addHeadWords(addDay))}</span>` : ""}`;
   $("find").placeholder = plate ? "Find an ingredient" : "Find a food";
   const b = $("plate-back"); if (b) b.onclick = leavePlate;
 }
@@ -645,7 +743,7 @@ function sheetBack() {
   show("add"); if (y) window.scrollTo(0, y);
 }
 function roTiles(per, partial, head) {
-  const x = per.x || {}, cell = (k, label, v, unit) => partial.includes(k) ? `<div class="cell"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input disabled value="${v == null ? "" : v}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
+  const x = per.x || {}, cell = (k, label, v, unit) => partial.includes(k) ? `<div class="cell${netOn() && k === "fiber" ? " co" : ""}"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input disabled value="${v == null ? "" : v}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
   return `<div class="per"><div class="rowhead"><span>${esc(head)}</span><span></span></div><div class="grid">${cell("kcal", "Calories", per.kcal, "")}${cell("p", "Protein", per.p, "g")}${cell("c", "Carbs", per.c, "g")}${cell("f", "Fat", per.f, "g")}</div><div class="grid">${cell("fiber", "Fiber", x.fiber, "g")}${cell("sugar", "Sugar", x.sugar, "g")}${cell("sodium", "Sodium", x.sodium, "mg")}${cell("satfat", "Sat. fat", x.satfat, "g")}</div>${netNote(per.c, x.fiber, partial.includes("fiber"), "per serving")}${partial.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`;
 }
 function builtHtml(rows, tiles) {
@@ -666,6 +764,7 @@ function openSheet(o) {
   if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
   if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; sheet.meas = { n: "1", unit: "", word: "", open: false }; }
   if (o.mode === "plate") { const pt = plateTotals(plate.rows); sheet.src = "plate"; sheet.rows = plate.rows; sheet.makes = plate.makes || 1; sheet.name = plate.name || ""; sheet.per = { kcal: pt.kcal, p: pt.p, c: pt.c, f: pt.f }; sheet.servingText = plateServing(sheet.makes, plate.rows.length); }
+  sheet.timeSet = true; if (addDay && o.mode !== "edit" && addDay !== dayKey(now)) { sheet.day = addDay; sheet.at = keyDate(addDay); sheet.timeSet = false; }
   $("sheet-title").textContent = o.mode === "pantry" && sheet.src === "usda" && !S.pantry.some(p => p.id === o.item.id) ? "Starter pantry" : { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit", plate: "Build a plate" }[o.mode];
   $("sheet-sub").textContent = o.mode === "typed" ? "entered" : o.mode === "plate" ? plateHead(plate.rows) : (SRC[sheet.src] || "entered");
   const can = o.mode === "pantry" && S.pantry.some(p => p.id === o.item.id); $("sheet-chg").hidden = !can; $("sheet-sub").hidden = can; $("sheet-chg").onclick = () => openManage(S.pantry.find(p => p.id === o.item.id));
@@ -686,9 +785,9 @@ function sheetTotals() {
 function netHero(tot) { return netOn() && +tot.c > 0 ? `<span class="co">Net carbs <b>${netHeroText(tot.c, tot.x ? tot.x.fiber : null)}</b></span><br>` : ""; }      /* F1, H2 */
 function netNote(c, fiber, partial, per, canType) { if (!netOn()) return ""; const p = netNoteParts(c, fiber, partial, canType); return p ? `<div class="netnote">Net carbs <b>${p.n}</b> ${esc(per)} <span>${p.why}</span></div>` : ""; }      /* F2, Z3 */
 function renderSheet() {
-  const t = sheetTotals(), tot = t.tot, typed = sheet.mode === "typed", isPlate = sheet.mode === "plate", whole = typed || isPlate, prow = isPlate ? sheet.rows : (sheet.item && sheet.item.plate) || null, editable = typed || sheet.mode === "edit" && !sheet.entry.per, isNow = Math.abs(sheet.at - sheet.openedAt) < 60000 && sheet.mode !== "edit";
+  const t = sheetTotals(), tot = t.tot, typed = sheet.mode === "typed", isPlate = sheet.mode === "plate", whole = typed || isPlate, prow = isPlate ? sheet.rows : (sheet.item && sheet.item.plate) || null, editable = typed || sheet.mode === "edit" && !sheet.entry.per, isNow = sheet.timeSet && Math.abs(sheet.at - sheet.openedAt) < 60000 && sheet.mode !== "edit", offDay = dayKey(sheet.at) !== dayKey(new Date()) ? dayWord(dayKey(sheet.at)) : "";
   const part = prow && !isPlate ? platePartial(prow) : [];
-  const cell = (k, label, unit) => part.includes(k) ? `<div class="cell"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${k === "kcal" && t.est ? " est" : ""}${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
+  const cell = (k, label, unit) => part.includes(k) ? `<div class="cell${netOn() && k === "fiber" ? " co" : ""}"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${k === "kcal" && t.est ? " est" : ""}${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
   const canLog = (+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0;
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
@@ -704,8 +803,9 @@ function renderSheet() {
     `<div id="net-note">${netNote(t.basis.c, t.basis.x.fiber, part.includes("fiber"), "per " + perWords(typed ? "" : sheet.servingText), typed)}</div>` +
     `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div>${part.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`) +
     (whole ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
-    `<div class="ate"><span>Ate at</span><span class="t"><input type="time" id="sh-time" value="${hh}:${mm}">${isNow ? `<span class="now">now</span>` : ""}</span></div>` +
-    `<button class="log" id="sh-log" ${canLog ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>` +
+    `<div class="ate"><span>Ate at</span><span class="t"><input type="time" id="sh-time" value="${sheet.timeSet ? hh + ":" + mm : ""}">${offDay ? `<span class="now">${offDay}</span>` : isNow ? `<span class="now">now</span>` : ""}</span></div>` +
+    (sheet.late ? `<div class="fine late" id="late-note">${esc(lateNote(sheet.mode === "edit"))}</div>` : "") +
+    `<button class="log" id="sh-log" ${canLog && sheet.timeSet ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>` +
     (whole ? `<button class="log soft" id="sh-keep" ${canLog ? "" : "disabled"} ${sheet.name.trim() ? "" : "hidden"}>Add to your pantry only</button>` : "") +
     (sheet.mode === "edit" ? `<button class="quiet" id="sh-del">Delete this entry</button>` : "");
   $("sh-name").oninput = ev => { sheet.name = ev.target.value; const ko = $("sh-keep"); if (ko) ko.hidden = !sheet.name.trim(); const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } const kl = $("keep-lbl"); if (kl) kl.textContent = "Keep in the pantry" + (sheet.name.trim() ? "" : " (name it first)"); };
@@ -715,14 +815,14 @@ function renderSheet() {
   if (whole && !sheet.topOpen) $("top-fold").onclick = () => { sheet.topOpen = true; if (typed) sheet.meas.open = true; renderSheet(); };
   if (whole && sheet.topOpen && isPlate) $("top-up").onclick = () => { sheet.topOpen = false; renderSheet(); };
   if (whole) { if (sheet.topOpen) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; } const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
-  $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (isNaN(h)) return; const d = new Date(sheet.at); d.setHours(h, m, 0, 0); if (d > new Date() && sheet.mode !== "edit") d.setDate(d.getDate() - 1); sheet.at = d; renderSheet(); };
+  $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (isNaN(h)) { if (sheet.day) sheet.timeSet = false; renderSheet(); return; } const d = new Date(sheet.at); d.setHours(h, m, 0, 0); const c = clampAte(d, new Date()); sheet.at = c.at; sheet.late = c.late; sheet.timeSet = true; if (c.late && sheet.mode !== "edit") sheet.openedAt = new Date(c.at); renderSheet(); };
   if (typed && sheet.topOpen) wireMeas($("ms"), sheet.meas, () => { if (!sheet.meas.open) { sheet.topOpen = false; renderSheet(); } });
   $("sh-log").onclick = () => commitSheet(false);
   const kb = $("sh-keep"); if (kb) kb.onclick = () => commitSheet(true);
   const bl = $("built"); if (bl) bl.onclick = () => { sheet.showIngs = !sheet.showIngs; $("ings").hidden = !sheet.showIngs; bl.querySelector("span").textContent = sheet.showIngs ? "Tap to hide them." : "Tap to see them."; };
   const del = $("sh-del"); if (del) del.onclick = () => { if (!confirm("Delete " + (sheet.name || "this entry") + "?")) return; S.entries = S.entries.filter(e => e.id !== sheet.entry.id); save(); toast("Deleted"); show("home"); };
 }
-function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), "per " + perWords(sheet.mode === "typed" ? "" : sheet.servingText), sheet.mode === "typed"); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); }
+function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), "per " + perWords(sheet.mode === "typed" ? "" : sheet.servingText), sheet.mode === "typed"); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0) || sheet.timeSet === false; }
 function commitSheet(keepOnly) {
   const t = sheetTotals(), name = sheet.name.trim();
   if (sheet.mode === "edit") {
@@ -742,11 +842,11 @@ function commitSheet(keepOnly) {
     if ((sheet.keep || keepOnly === true) && name) { const item = { id: uid(), name, serving: sheet.servingText, per, src: "plate", added: Date.now(), used: [], makes: sheet.makes, plate: sheet.rows.map(r => plateRow({ id: r.itemId, name: r.name, serving: r.unit, src: r.src, per: r.per }, r.amount)) }; S.pantry.unshift(item); pantryId = item.id; }
     plate = null;
   }
-  if (keepOnly === true) { if (!name) return; save(); $("find").value = ""; toast("In your pantry. Nothing logged."); show("add"); return; }
+  if (keepOnly === true) { if (!name) return; save(); $("find").value = ""; toast("In your pantry. Nothing logged."); if (sheet.day) { viewDay = sheet.day; addDay = null; show("home"); } else show("add"); return; }
   const entry = Object.assign({ id: uid(), t: sheet.at.toISOString(), src: sheet.mode === "typed" ? "typed" : (sheet.src || "typed"), name, servings: sheet.servings, per, servingText: sheet.servingText, est: t.est }, t.tot);
   if (pantryId) { entry.pantryId = pantryId; const item = S.pantry.find(p => p.id === pantryId); if (item) { item.used = (item.used || []).concat(entry.t).slice(-20); } }
   S.entries.push(entry); save();
-  $("find").value = ""; toast("Logged, " + clock(entry.t)); show("home");
+  $("find").value = ""; toast("Logged, " + clock(entry.t)); viewDay = sheet.day || null; addDay = null; show("home");
 }
 
 /* ================= the item's own sheet: In your pantry (ruled Sep 18 2026 — door C, sheets T / U / P, remove, K2) ================= */
@@ -828,6 +928,7 @@ function renderSettings() {
   ["kcal", "p", "c", "f"].forEach(k => { $("t-" + k).value = S.targets[k]; });
   $("version").innerHTML = `${BUILD}<span>${BUILD_DATE}</span>`;
   $("net-sw").setAttribute("aria-checked", String(netOn()));
+  $("keep-row").hidden = kept == null; $("kept").textContent = kept ? "persistent" : "best effort";
   applyTheme();
 }
 ["kcal", "p", "c", "f"].forEach(k => { $("t-" + k).onchange = ev => { const v = Math.max(0, Math.round(+ev.target.value || 0)); S.targets[k] = v; S.targetsSet = true; save(); ev.target.value = v; }; });
