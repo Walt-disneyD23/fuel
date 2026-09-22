@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921q · a fuel log, not a diet app.
+  Fuel · build 0921r · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -354,7 +354,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921q", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921r", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -891,9 +891,9 @@ let sheet = null;
 function openSheet(o) {
   const now = new Date();
   sheet = { mode: o.mode, openedAt: now, servings: 1, makes: 1, at: new Date(now), name: "", per: { kcal: "", p: "", c: "", f: "", fiber: "", sugar: "", sodium: "", satfat: "" }, keep: true, est: false };
-  if (o.mode === "pantry") { sheet.item = o.item; sheet.name = o.item.name; sheet.per = Object.assign({}, o.item.per, o.item.per.x || {}, o.item.per.n || {}); if (o.item.label) sheet.label = o.item.label; sheet.src = o.item.src === "usda" ? "usda" : "pantry"; sheet.servingText = o.item.serving || "serving"; }
-  if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
-  if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
+  if (o.mode === "pantry") { sheet.item = o.item; sheet.name = o.item.name; sheet.per = Object.assign({}, o.item.per, o.item.per.x || {}, o.item.per.n || {}); if (o.item.label) sheet.label = o.item.label; sheet.part = { np: o.item.per.np || {}, xp: o.item.per.xp || {} }; sheet.src = o.item.src === "usda" ? "usda" : "pantry"; sheet.servingText = o.item.serving || "serving"; }
+  if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; if (e.per) sheet.part = { np: e.per.np || {}, xp: e.per.xp || {} }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
+  if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; if (e.per) sheet.part = { np: e.per.np || {}, xp: e.per.xp || {} }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
   if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; sheet.meas = { n: "1", unit: "", word: "", open: false }; }
   if (o.mode === "label") { const r = labelSheet(o.read); sheet.src = "label"; sheet.name = r.name; sheet.per = r.per; sheet.servingText = r.servingText; sheet.meas = Object.assign(r.meas, { open: false }); sheet.label = r.label; sheet.snap = { photos: o.photos || [], secs: o.secs || 0 }; if (!(snap && snap.adding)) snap = null; }      /* 0921h: the photos ride in the sheet for K2's row, never in S. 0921n: unless the camera is open for another photo, which then joins this read */
   if (o.mode === "plate") { const pt = plateTotals(plate.rows); sheet.src = "plate"; sheet.rows = plate.rows; sheet.makes = plate.makes || 1; sheet.name = plate.name || ""; sheet.word = plate.word || ""; sheet.per = { kcal: pt.kcal, p: pt.p, c: pt.c, f: pt.f }; sheet.servingText = plateServing(sheet.makes, plate.rows.length, sheet.word); }
@@ -912,7 +912,7 @@ function sheetTotals() {
   const basis = sheet.mode === "typed" ? { kcal: perK / sheet.makes, p: p / sheet.makes, c: c / sheet.makes, f: f / sheet.makes } : { kcal: perK, p, c, f };
   const X = ["fiber", "sugar", "sodium", "satfat"], bx = {}, tx = {};
   X.forEach(k => { const v = per[k], n = v === "" || v == null || isNaN(+v) ? null : +v; bx[k] = n == null ? null : (sheet.mode === "typed" ? n / sheet.makes : n); tx[k] = bx[k] == null ? null : r1(bx[k] * sheet.servings); });
-  basis.x = bx; basis.n = nutPer(per, sheet.mode === "typed" ? sheet.makes : 1); const tot = scale(basis, sheet.servings); tot.x = tx; tot.n = nutR1(nutMul(basis.n, sheet.servings));
+  basis.x = bx; basis.n = nutPer(per, sheet.mode === "typed" ? sheet.makes : 1); basis.np = sheet.part ? sheet.part.np : {}; basis.xp = sheet.part ? sheet.part.xp : {}; const tot = scale(basis, sheet.servings); tot.x = tx; tot.n = nutR1(nutMul(basis.n, sheet.servings)); tot.np = nutR1(nutMul(basis.np, sheet.servings)); tot.xp = nutR1(nutMul(basis.xp, sheet.servings));      /* 0921r: the part a recipe knows rides from the pantry and the spine too */
   return { est, basis, tot };
 }
 function netHero(tot) { return netOn() && +tot.c > 0 ? `<span class="co">Net carbs <b>${netHeroText(tot.c, tot.x ? tot.x.fiber : null)}</b></span><br>` : ""; }      /* F1, H2 */
@@ -984,7 +984,7 @@ function commitSheet(keepOnly) {
     const e = sheet.entry; Object.assign(e, t.tot, { name, t: sheet.at.toISOString(), est: t.est }); if (e.per) e.servings = sheet.servings; else e.per = undefined;
     save(); toast("Saved"); show("home"); return;
   }
-  const per = sheet.mode === "plate" ? platePer(sheet.rows, sheet.makes) : { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x, n: t.basis.n };
+  const per = sheet.mode === "plate" ? platePer(sheet.rows, sheet.makes) : { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x, n: t.basis.n, np: t.basis.np, xp: t.basis.xp };
   if (sheet.mode === "typed" || sheet.mode === "label") sheet.servingText = typedServing();
   let pantryId = sheet.item ? sheet.item.id : null;
   if (sheet.item && !S.pantry.some(p => p.id === sheet.item.id)) S.pantry.unshift(sheet.item);
