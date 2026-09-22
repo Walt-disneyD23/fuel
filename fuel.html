@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921s · a fuel log, not a diet app.
+  Fuel · build 0921t · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -126,6 +126,8 @@ main[hidden] { display:none; }
 .find input { flex:1; min-width:0; border:0; background:transparent; padding:0; font:600 17px var(--fb); color:var(--ink); -webkit-appearance:none; appearance:none; }
 .find input::placeholder { color:var(--ink2); font-weight:500; }
 .find input::-webkit-search-cancel-button { -webkit-appearance:none; }
+.fclr { flex:none; width:26px; height:26px; border-radius:50%; border:0; padding:0; background:var(--field); color:var(--ink2); display:flex; align-items:center; justify-content:center; margin:-3px -4px -3px 0; }      /* 0921t: the way out of Find */
+.fclr[hidden] { display:none; }
 .find:focus-within { box-shadow:0 0 0 2px var(--acc); }
 #results .sect:first-child { margin-top:10px; }
 .pi .pn b { color:var(--acc); font-weight:600; }
@@ -298,7 +300,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 <!-- ============ ADD: the doors ============ -->
 <main id="v-add" hidden>
   <div class="head" id="add-head"><span class="title">Add</span></div>
-  <label class="find"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="find" type="search" placeholder="Find a food" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></label>
+  <label class="find"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="find" type="search" placeholder="Find a food" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"><button type="button" class="fclr" id="find-clear" aria-label="Clear the search" hidden><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></label>
   <div id="results" hidden></div>
   <div id="add-body">
   <button class="door" id="door-snap"><span class="dm"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.2a2.2 2.2 0 0 1 2.2-2.2h1.9l1.3-2.1a1.4 1.4 0 0 1 1.2-.7h4.8a1.4 1.4 0 0 1 1.2.7L16.9 7h1.9A2.2 2.2 0 0 1 21 9.2v8.1a2.2 2.2 0 0 1-2.2 2.2H5.2A2.2 2.2 0 0 1 3 17.3z"/><circle cx="12" cy="13" r="3.6"/></svg></span><span class="dtx"><span class="dt">Snap a label</span><span class="dd" style="display:block">The Nutrition Facts, in a photo or two. The front, if you want the name.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
@@ -354,7 +356,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921s", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921t", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -644,7 +646,7 @@ mq.addEventListener("change", applyTheme);
 const VIEWS = ["home", "days", "add", "sheet", "settings"];
 let view = "home";
 function show(v) { view = v; if (v !== "settings") codeEditing = false; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v === "days" ? "home" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "days") renderDays(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
-$("nav-home").onclick = () => { viewDay = null; addDay = null; show("home"); }; $("nav-add").onclick = () => { addDay = addTarget(view, viewDay, addDay, dayKey(new Date())); show("add"); }; $("nav-settings").onclick = () => { viewDay = null; addDay = null; show("settings"); };
+$("nav-home").onclick = () => { viewDay = null; addDay = null; show("home"); }; $("nav-add").onclick = () => { addDay = addTarget(view, viewDay, addDay, dayKey(new Date())); $("find").value = ""; show("add"); };      /* 0921t: a stale word never waits for you */ $("nav-settings").onclick = () => { viewDay = null; addDay = null; show("settings"); };
 let toastT; function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1800); }
 
 /* ================= today ================= */
@@ -735,6 +737,7 @@ function renderAdd() {
 }
 function markHit(name, q) { const i = name.toLowerCase().indexOf(q); return i < 0 ? esc(name) : esc(name.slice(0, i)) + "<b>" + esc(name.slice(i, i + q.length)) + "</b>" + esc(name.slice(i + q.length)); }
 function renderFind() {
+  $("find-clear").hidden = !($("find").value || "").trim();      /* 0921t */
   if (plate) return renderPicker();
   const q = ($("find").value || "").trim().toLowerCase(); const R = $("results");
   if (!q) { R.hidden = true; R.innerHTML = ""; $("add-body").hidden = false; return; }
@@ -750,7 +753,7 @@ function renderFind() {
   R.querySelectorAll("[data-p]").forEach(b => b.onclick = () => openSheet({ mode: "pantry", item: S.pantry.find(p => p.id === b.dataset.p) }));
   R.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { const s = STARTER.find(p => p.id === b.dataset.s); openSheet({ mode: "pantry", item: Object.assign({}, s, { per: Object.assign({}, s.per, { x: Object.assign({}, s.per.x) }), added: Date.now(), used: [] }) }); });
 }
-$("find").oninput = renderFind;
+$("find").oninput = renderFind; $("find-clear").onclick = () => { $("find").value = ""; $("find").blur(); renderFind(); };      /* 0921t */
 $("door-type").onclick = () => openSheet({ mode: "typed" });
 $("door-snap").onclick = () => { if (!codeOk(codeGet())) return openCode(); snap = null; $("snap-file").click(); };      /* D3: no code on this phone → the small sheet; else C1, straight to the camera */
 function openCode() {                                                                   /* D3, the mock's words: the field, the fine print, one button */
@@ -814,6 +817,7 @@ function leavePlate() {
   plate = null; $("find").value = ""; show("add");
 }
 function renderPicker() {
+  $("find-clear").hidden = !($("find").value || "").trim();      /* 0921t */
   const q = ($("find").value || "").trim().toLowerCase(), R = $("results");
   $("add-body").hidden = true; R.hidden = false;
   const shut = new Set(plate.editing ? plate.editing.exclude : []), inIds = new Set(plate.rows.map(r => r.itemId)), hit = p => !shut.has(p.id) && !inIds.has(p.id) && (!q || p.name.toLowerCase().includes(q));
