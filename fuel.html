@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921m · a fuel log, not a diet app.
+  Fuel · build 0921n · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -231,6 +231,7 @@ input.name:focus, .ate input:focus, .row input.num:focus { box-shadow:0 0 0 2px 
 /* Snap a label (0921h): the photo in the card, three quiet dots while the read is in flight */
 .snapph { flex:0 0 auto; width:64px; height:84px; border-radius:12px; overflow:hidden; background:var(--field); } .snapph img { width:100%; height:100%; object-fit:cover; display:block; }
 .snapph.wide { width:100%; height:230px; border-radius:16px; margin-bottom:16px; } .snapph.wide img { object-position:50% 18%; }
+.snapph.wide.many { display:grid; grid-template-columns:1fr 1fr; gap:6px; background:none; } .snapph.wide.many.n3 { grid-template-columns:1fr 1fr 1fr; } .snapph.wide.many img { border-radius:12px; }      /* 0921n: every photo in the read */
 .snapw { display:flex; flex-direction:column; gap:5px; min-width:0; } .snapw b { font:600 16px var(--fb); } .snapw.ctr { align-items:center; text-align:center; margin:4px 0 6px; } .snapw.ctr b { font-size:18px; }
 .dots { display:inline-flex; gap:6px; height:12px; align-items:center; } .dots i { width:7px; height:7px; border-radius:50%; background:var(--acc); animation:blink 1.2s infinite ease-in-out; } .dots i:nth-child(2) { animation-delay:.2s; } .dots i:nth-child(3) { animation-delay:.4s; }
 @keyframes blink { 0%, 80%, 100% { opacity:.25; } 40% { opacity:1; } }
@@ -352,7 +353,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921m", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921n", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -783,9 +784,9 @@ function snapFail(code, reply) { if (!snap) return; snap.fail = failWords(code, 
 function renderSnap() {                                                           /* the wait screen, or the failure words in its place; the photo stays */
   if (!snap) return; sheet = { mode: "snap", openedAt: new Date() }; const n = snap.photos.length, last = snap.photos[n - 1];
   $("sheet-title").textContent = "Snap a label"; $("sheet-sub").textContent = ""; $("sheet-sub").hidden = false; $("sheet-chg").hidden = true;
-  $("sheet").innerHTML = `<div class="snapph wide"><img src="${last.url}" alt=""></div>` + (snap.fail
+  $("sheet").innerHTML = (n === 1 ? `<div class="snapph wide"><img src="${last.url}" alt=""></div>` : `<div class="snapph wide many n${n}">${snap.photos.map(p => `<img src="${p.url}" alt="">`).join("")}</div>`) + (snap.fail
     ? `<div class="snapw ctr"><b>${esc(snap.fail.fact)}</b><span class="fine">${esc(snap.fail.next)}</span></div>${snap.fail.primary ? `<button class="log soft" id="snap-act">${esc(snap.fail.primary)}</button>` : ""}<button class="quiet" id="snap-type">Type it instead</button>`
-    : `<div class="snapw ctr"><b>Reading the label</b>${DOTS}<span class="fine">Usually about 10 seconds. ${snap.again ? "The check screen comes back with every number read again; one you changed by hand is replaced." : "The check screen comes up when it lands."}</span></div>` + (n < 3 ? `<button class="log soft" id="snap-more">Add another photo</button><p class="fine" style="margin:12px 2px 0">For a label that wraps round a cup, or the front for the name. The read starts again with ${n === 1 ? "both" : "all three"} photos.</p>` : ""));
+    : `<div class="snapw ctr"><b>${n === 1 ? "Reading the label" : "Reading " + n + " photos"}</b>${DOTS}<span class="fine">Usually about 10 seconds. ${snap.again ? "The check screen comes back with every number read again; one you changed by hand is replaced." : "The check screen comes up when it lands."}</span></div>` + (n < 3 ? `<button class="log soft" id="snap-more">Add another photo</button><p class="fine" style="margin:12px 2px 0">For a label that wraps round a cup, or the front for the name. The read starts again with ${n === 1 ? "both" : "all three"} photos.</p>` : ""));
   const more = $("snap-more"); if (more) more.onclick = () => { snap.adding = true; $("snap-file").click(); };
   const act = $("snap-act"); if (act) act.onclick = () => { const a = snap.fail.act; if (a === "retry") startRead(); else if (a === "another") { snap.adding = false; $("snap-file").click(); } else if (a === "settings") { snapCancel(); show("settings"); } };
   const ty = $("snap-type"); if (ty) ty.onclick = () => { snapCancel(); openSheet({ mode: "typed" }); };
@@ -893,7 +894,7 @@ function openSheet(o) {
   if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
   if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
   if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; sheet.meas = { n: "1", unit: "", word: "", open: false }; }
-  if (o.mode === "label") { const r = labelSheet(o.read); sheet.src = "label"; sheet.name = r.name; sheet.per = r.per; sheet.servingText = r.servingText; sheet.meas = Object.assign(r.meas, { open: false }); sheet.label = r.label; sheet.snap = { photos: o.photos || [], secs: o.secs || 0 }; snap = null; }      /* 0921h: the photos ride in the sheet for K2's row, never in S */
+  if (o.mode === "label") { const r = labelSheet(o.read); sheet.src = "label"; sheet.name = r.name; sheet.per = r.per; sheet.servingText = r.servingText; sheet.meas = Object.assign(r.meas, { open: false }); sheet.label = r.label; sheet.snap = { photos: o.photos || [], secs: o.secs || 0 }; if (!(snap && snap.adding)) snap = null; }      /* 0921h: the photos ride in the sheet for K2's row, never in S. 0921n: unless the camera is open for another photo, which then joins this read */
   if (o.mode === "plate") { const pt = plateTotals(plate.rows); sheet.src = "plate"; sheet.rows = plate.rows; sheet.makes = plate.makes || 1; sheet.name = plate.name || ""; sheet.word = plate.word || ""; sheet.per = { kcal: pt.kcal, p: pt.p, c: pt.c, f: pt.f }; sheet.servingText = plateServing(sheet.makes, plate.rows.length, sheet.word); }
   sheet.timeSet = true; if (addDay && o.mode !== "edit" && addDay !== dayKey(now)) { sheet.day = addDay; sheet.at = keyDate(addDay); sheet.timeSet = false; }
   $("sheet-title").textContent = o.mode === "pantry" && sheet.src === "usda" && !S.pantry.some(p => p.id === o.item.id) ? "Starter pantry" : { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit", plate: "Build a recipe", label: "Snap a label" }[o.mode];
