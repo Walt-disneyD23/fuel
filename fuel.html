@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921k · a fuel log, not a diet app.
+  Fuel · build 0921l · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -76,6 +76,7 @@ main[hidden] { display:none; }
 .grid .cell.nut { grid-column:span 2; } .lines { margin-top:10px; } .ln { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-top:1px solid var(--line); font-size:14px; } .ln span:first-child { color:var(--ink2); } .ln span:last-child { font-family:var(--fd); font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .ate .msr.open svg { transform:rotate(180deg); }
 #nut-rows .row .tgt { margin-left:auto; margin-right:14px; } #nut-rows .row .tgt .num { width:70px; } #nut-rows .sw:disabled { opacity:.35; }
+#nut-card .nhead { border-top:0; padding:0 0 16px; font-weight:700; font-size:17px; }      /* H2 (0921l): a card's heading, a rung under the spine's 22 px screen head */
 .fill { height:100%; border-radius:6px; background:var(--acc); transition:width .25s ease; }
 .read { margin-top:22px; padding-top:18px; border-top:1px solid var(--line); font-size:18px; line-height:1.4; font-weight:500; }
 .notice { margin-top:14px; font-size:14px; color:var(--ink2); }
@@ -325,7 +326,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
     <div class="row"><span>Net carbs</span><button class="sw" id="net-sw" role="switch" aria-checked="false"></button></div>
     <p class="fine" style="margin:14px 0 0">Carbs minus fiber. When this is on, tap the Carbs bar on Today to flip it to net carbs and back. An entry with no fiber number counts all its carbs, and the bar says how many there are. Fuel does not subtract sugar alcohols.</p>
   </section>
-  <section class="card" id="nut-card"><div class="row" style="border-top:0;padding-top:0"><span>Nutrients</span><span class="rv" id="nut-count"></span></div><div id="nut-rows"></div><p class="fine" style="margin:14px 0 0">A nutrient that is on gets a row on Today and a tile on every sheet, up to two at once. A target is yours to set; until then the row is a plain number. An entry with no number for it does not count, and the row says “at least” and how many. A label read keeps every line it printed, so a switch turned on later reads them back.</p></section>
+  <section class="card" id="nut-card"><div class="row nhead"><span>Nutrients</span><span class="rv" id="nut-count"></span></div><div id="nut-rows"></div><p class="fine" style="margin:14px 0 0">A nutrient that is on gets a row on Today and a tile on every sheet, up to two at once. A target is yours to set; until then the row is a plain number. An entry with no number for it does not count, and the row says “at least” and how many. A label read keeps every line it printed, so a switch turned on later reads them back.</p></section>
   <section class="card" id="code-card"><div id="code-body"></div><p class="fine" style="margin:14px 0 0">Snap needs the family’s own code once, on each phone. It lets this phone send label photos to the family’s reader; without it nothing is sent. The code lives on this phone only, never in the app’s file.</p></section>
   <section class="card">
     <div class="row"><span>Look</span><span class="seg" id="theme"><button data-t="light">Light</button><button data-t="auto">Auto</button><button data-t="dark">Dark</button></span></div>
@@ -350,7 +351,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921k", BUILD_DATE = "Sep 21, 2026";
+const BUILD = "0921l", BUILD_DATE = "Sep 21, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
