@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921u · a fuel log, not a diet app.
+  Fuel · build 0921v · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -356,7 +356,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921u", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921v", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -1022,6 +1022,7 @@ function manageHead() { const it = sheet.item; $("sheet-title").textContent = "I
 function openManage(item) {
   const flat = Object.assign({}, item.per, item.per.x || {}, item.per.n || {}); delete flat.x; delete flat.n; delete flat.npartial; delete flat.np; for (const k in flat) if (flat[k] == null) flat[k] = "";
   sheet = { mode: "manage", item, name: item.name, per: flat, makes: item.makes || 1, word: item.word || "", label: item.label || null, labelOpen: false, rows: item.plate ? item.plate.map(rowCopy) : null, meas: Object.assign(measureOf(item.plate || item.src === "usda" ? "" : item.serving), { open: false }) };
+  sheet.pristine = JSON.stringify(manageItem());      /* 0921v: LIKE WITH LIKE — what Edit would save if nothing were touched */
   show("sheet"); manageHead(); renderManage();
 }
 function managePer() { const p = sheet.per, num = v => v === "" || v == null || isNaN(+v) ? null : +v, g = k => r1(+p[k] || 0), kc = num(p.kcal); return { kcal: kc == null ? kcalFromGrams(g("p"), g("c"), g("f")) : Math.round(kc), p: g("p"), c: g("c"), f: g("f"), x: { fiber: num(p.fiber), sugar: num(p.sugar), sodium: num(p.sodium), satfat: num(p.satfat) }, n: nutPer(p) }; }
@@ -1031,7 +1032,7 @@ function manageItem() {
   if (it.src === "usda") return it;
   return Object.assign({}, it, { name, serving: measNow(sheet.meas) || (measureOf(it.serving).unit ? "serving" : it.serving || "serving"), per: managePer() });
 }
-function manageDirty() { return JSON.stringify(manageItem()) !== JSON.stringify(sheet.item); }
+function manageDirty() { return JSON.stringify(manageItem()) !== sheet.pristine; }      /* 0921v: a record shaped by an older build is not a change */
 function manageOk() { const p = sheet.per; return !!sheet.name.trim() && (sheet.item.plate ? sheet.rows.length > 0 : (+p.p || +p.c || +p.f || +p.kcal) > 0); }
 function renderManage() {
   const it = sheet.item, isPlate = !!it.plate, fixedFood = it.src === "usda" && !isPlate, blankK = sheet.per.kcal === "" || sheet.per.kcal == null;
