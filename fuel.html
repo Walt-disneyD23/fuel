@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921o · a fuel log, not a diet app.
+  Fuel · build 0921p · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -353,7 +353,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921o", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921p", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -465,11 +465,11 @@ function plateTotals(rows) {
   const t = { kcal: 0, p: 0, c: 0, f: 0, x: { fiber: null, sugar: null, sodium: null, satfat: null }, n: rows.length }, part = platePartial(rows);
   for (const r of rows) { const s = scale(r.per, r.amount); t.kcal += s.kcal; t.p += s.p; t.c += s.c; t.f += s.f; for (const k in t.x) { const v = r.per.x ? r.per.x[k] : null; if (v != null) t.x[k] = (t.x[k] || 0) + r1(v * r.amount); } }
   t.p = r1(t.p); t.c = r1(t.c); t.f = r1(t.f); for (const k in t.x) t.x[k] = t.x[k] == null || part.includes(k) ? null : r1(t.x[k]);
-  t.partial = part; const pn = plateNut(rows); t.n = pn.n; t.npartial = pn.partial;
+  t.partial = part; const pn = plateNut(rows); t.n = pn.n; t.npartial = pn.partial; t.np = pn.part;
   return t;
 }
-function plateBasis(rows, makes) { const t = plateTotals(rows), m = Math.max(1, +makes || 1), x = {}; for (const k in t.x) x[k] = t.x[k] == null ? null : t.x[k] / m; return { kcal: t.kcal / m, p: t.p / m, c: t.c / m, f: t.f / m, x: x, n: nutDiv(t.n, m), npartial: t.npartial }; }
-function platePer(rows, makes) { const b = plateBasis(rows, makes), x = {}; for (const k in b.x) x[k] = b.x[k] == null ? null : r1(b.x[k]); return { kcal: Math.round(b.kcal), p: r1(b.p), c: r1(b.c), f: r1(b.f), x: x, n: nutR1(b.n), npartial: b.npartial }; }
+function plateBasis(rows, makes) { const t = plateTotals(rows), m = Math.max(1, +makes || 1), x = {}; for (const k in t.x) x[k] = t.x[k] == null ? null : t.x[k] / m; return { kcal: t.kcal / m, p: t.p / m, c: t.c / m, f: t.f / m, x: x, n: nutDiv(t.n, m), npartial: t.npartial, np: nutDiv(t.np, m) }; }
+function platePer(rows, makes) { const b = plateBasis(rows, makes), x = {}; for (const k in b.x) x[k] = b.x[k] == null ? null : r1(b.x[k]); return { kcal: Math.round(b.kcal), p: r1(b.p), c: r1(b.c), f: r1(b.f), x: x, n: nutR1(b.n), npartial: b.npartial, np: nutR1(b.np) }; }
 function plateServing(makes, count, word) { const w = plateWord(word); return (makes > 1 ? "1 of " + makes + " " + manyWord(w) : "1 " + w) + ", " + count + (count === 1 ? " ingredient" : " ingredients"); }
 function plateHead(rows) { return rows.length ? rows.length + " in, " + fmt(plateTotals(rows).kcal) + " kcal" : "nothing in yet"; }
 function builtLine(rows) {
@@ -563,11 +563,11 @@ function nutDiv(o, m) { const r = {}; for (const k in (o || {})) r[k] = o[k] / m
 function nutMul(o, m) { const r = {}; for (const k in (o || {})) r[k] = o[k] * m; return r; }
 function nutR1(o) { const r = {}; for (const k in (o || {})) r[k] = r1(o[k]); return r; }
 function nutFmt(v, unit) { return (unit === "g" ? String(r1(v)) : fmt(v)) + " " + unit; }
-function dayNut(entries, key) { let v = 0, gaps = 0; for (const e of entries) { let x = e.n ? nutNum(e.n[key]) : null; if (x == null && e.label) { const lv = lineValue(e.label.lines, key); if (lv != null) x = lv * (+e.servings || 1); } if (x == null) gaps++; else v += x; } return { v: r1(v), gaps, n: entries.length }; }      /* an entry without the number is a gap; a switch turned on later reads the label's own lines back */
-function nutVal(d, target, unit, past) { const t = +target || 0; if (d.n && d.gaps === d.n) return past ? "no number" : "no number yet"; return (d.gaps ? "at least " : "") + nutFmt(d.v, unit) + (t ? " of " + nutFmt(t, unit) + (d.v > t ? ", " + (unit === "g" ? String(r1(d.v - t)) : fmt(d.v - t)) + " over" : "") : ""); }      /* "at least" is the mirror of net carbs' "up to"; over is a number */
+function dayNut(entries, key) { let v = 0, gaps = 0; for (const e of entries) { let x = e.n ? nutNum(e.n[key]) : null; if (x == null && e.label) { const lv = lineValue(e.label.lines, key); if (lv != null) x = lv * (+e.servings || 1); } if (x == null) { gaps++; const p = e.np ? nutNum(e.np[key]) : null; if (p != null) v += p; } else v += x; } return { v: r1(v), gaps, n: entries.length }; }      /* 0921p: a recipe's part-sum counts toward "at least" */      /* an entry without the number is a gap; a switch turned on later reads the label's own lines back */
+function nutVal(d, target, unit, past) { const t = +target || 0; if (d.n && d.gaps === d.n && !d.v) return past ? "no number" : "no number yet"; return (d.gaps ? "at least " : "") + nutFmt(d.v, unit) + (t ? " of " + nutFmt(t, unit) + (d.v > t ? ", " + (unit === "g" ? String(r1(d.v - t)) : fmt(d.v - t)) + " over" : "") : ""); }      /* "at least" is the mirror of net carbs' "up to"; over is a number */
 function nutWord(key) { const x = nutOf(key); return x ? x.name.charAt(0).toLowerCase() + x.name.slice(1) : key; }
 function nutGapLine(list) { const g = list.filter(x => x.gaps > 0); return g.length ? g.map((x, i) => (i ? (x.gaps === 1 ? "1 has" : x.gaps + " have") : (x.gaps === 1 ? "1 entry has" : x.gaps + " entries have")) + " no " + nutWord(x.key) + " number").join(", ") + "." : ""; }
-function plateNut(rows) { const t = {}, partial = []; for (const x of NUT) { const known = rows.filter(r => r.per.n && nutNum(r.per.n[x.key]) != null); if (!known.length) continue; if (known.length < rows.length) { partial.push(x.key); continue; } t[x.key] = r1(known.reduce((a, r) => a + nutNum(r.per.n[x.key]) * r.amount, 0)); } return { n: t, partial }; }      /* THE PARTIAL LAW: whole only when every ingredient knows it */
+function plateNut(rows) { const t = {}, partial = [], part = {}; for (const x of NUT) { const known = rows.filter(r => r.per.n && nutNum(r.per.n[x.key]) != null); if (!known.length) continue; const sum = r1(known.reduce((a, r) => a + nutNum(r.per.n[x.key]) * r.amount, 0)); if (known.length < rows.length) { partial.push(x.key); part[x.key] = sum; continue; } t[x.key] = sum; } return { n: t, partial, part }; }      /* THE PARTIAL LAW: whole only when every ingredient knows it */
 function lineText(l) { const a = typeof l.amount === "number" && isFinite(l.amount) ? String(l.amount) : "\u2013"; return (l.lessThan ? "less than " : "") + a + (l.unit ? " " + l.unit : "") + (l.dv != null ? " \u00b7 " + l.dv + "%" : ""); }
 const TILE_LINES = ["calories", "total_fat", "saturated_fat", "sodium", "total_carbohydrate", "dietary_fiber", "total_sugars", "protein"];
 function labelRest(lines, on) { if (!Array.isArray(lines)) return []; const shown = (on || []).map(k => { const x = nutOf(k); return x ? lines.find(l => l && (l.key === x.line && x.line !== "other" || String(l.name || "").trim().toLowerCase() === x.name.toLowerCase())) : null; }).filter(Boolean); return lines.filter(l => l && !TILE_LINES.includes(l.key) && !shown.includes(l)); }      /* what is left after the eight tiles and the switched-on ones */
@@ -903,7 +903,7 @@ function openSheet(o) {
   show("sheet"); renderSheet();
 }
 function sheetTotals() {
-  if (sheet.mode === "plate") { const basis = plateBasis(sheet.rows, sheet.makes), tot = scale(basis, sheet.servings); tot.x = {}; for (const k in basis.x) tot.x[k] = basis.x[k] == null ? null : r1(basis.x[k] * sheet.servings); tot.n = nutR1(nutMul(basis.n, sheet.servings)); return { est: false, basis, tot }; }
+  if (sheet.mode === "plate") { const basis = plateBasis(sheet.rows, sheet.makes), tot = scale(basis, sheet.servings); tot.x = {}; for (const k in basis.x) tot.x[k] = basis.x[k] == null ? null : r1(basis.x[k] * sheet.servings); tot.n = nutR1(nutMul(basis.n, sheet.servings)); tot.np = nutR1(nutMul(basis.np, sheet.servings)); return { est: false, basis, tot }; }
   const per = sheet.per, p = +per.p || 0, c = +per.c || 0, f = +per.f || 0;
   const kcalTyped = per.kcal !== "" && per.kcal != null && !isNaN(+per.kcal);
   const perK = kcalTyped ? +per.kcal : kcalFromGrams(p, c, f);
@@ -1008,7 +1008,7 @@ function commitSheet(keepOnly) {
 /* It logs nothing: no servings, no hero, no Ate at. Save the changes commits; nothing else does. What was already logged is never touched. */
 function manageHead() { const it = sheet.item; $("sheet-title").textContent = "In your pantry"; $("sheet-sub").textContent = it.plate ? plateHead(sheet.rows) : (SRC[it.src] || "entered"); $("sheet-sub").hidden = false; $("sheet-chg").hidden = true; }
 function openManage(item) {
-  const flat = Object.assign({}, item.per, item.per.x || {}); delete flat.x; for (const k in flat) if (flat[k] == null) flat[k] = "";
+  const flat = Object.assign({}, item.per, item.per.x || {}, item.per.n || {}); delete flat.x; delete flat.n; delete flat.npartial; delete flat.np; for (const k in flat) if (flat[k] == null) flat[k] = "";
   sheet = { mode: "manage", item, name: item.name, per: flat, makes: item.makes || 1, word: item.word || "", rows: item.plate ? item.plate.map(rowCopy) : null, meas: Object.assign(measureOf(item.plate || item.src === "usda" ? "" : item.serving), { open: false }) };
   show("sheet"); manageHead(); renderManage();
 }
@@ -1023,8 +1023,8 @@ function manageDirty() { return JSON.stringify(manageItem()) !== JSON.stringify(
 function manageOk() { const p = sheet.per; return !!sheet.name.trim() && (sheet.item.plate ? sheet.rows.length > 0 : (+p.p || +p.c || +p.f || +p.kcal) > 0); }
 function renderManage() {
   const it = sheet.item, isPlate = !!it.plate, fixedFood = it.src === "usda" && !isPlate, blankK = sheet.per.kcal === "" || sheet.per.kcal == null;
-  const tile = (k, label, unit) => `<div class="cell${k === "kcal" && blankK ? " est" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}" ${fixedFood ? "disabled" : ""}>${unit ? `<span>${unit}</span>` : ""}</div></div>`;
-  const tiles = () => `<div class="per"><div class="rowhead"><span id="mg-per">${SRC[it.src] || "entered"}, per ${esc(manageItem().serving || "serving")}</span><span>${fixedFood ? "" : "tap to change"}</span></div><div class="grid">${tile("kcal", "Calories", "")}${tile("p", "Protein", "g")}${tile("c", "Carbs", "g")}${tile("f", "Fat", "g")}</div><div class="grid">${tile("fiber", "Fiber", "g")}${tile("sugar", "Sugar", "g")}${tile("sodium", "Sodium", "mg")}${tile("satfat", "Sat. fat", "g")}</div><div class="fine" id="est-note" style="margin-top:8px" ${blankK && !fixedFood ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div></div>`;
+  const tile = (k, label, unit, nut) => `<div class="cell${nut ? " co nut" : ""}${k === "kcal" && blankK ? " est" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}" ${fixedFood ? "disabled" : ""}>${unit ? `<span>${unit}</span>` : ""}</div></div>`;
+  const tiles = () => `<div class="per"><div class="rowhead"><span id="mg-per">${SRC[it.src] || "entered"}, per ${esc(manageItem().serving || "serving")}</span><span>${fixedFood ? "" : "tap to change"}</span></div><div class="grid">${tile("kcal", "Calories", "")}${tile("p", "Protein", "g")}${tile("c", "Carbs", "g")}${tile("f", "Fat", "g")}</div><div class="grid">${tile("fiber", "Fiber", "g")}${tile("sugar", "Sugar", "g")}${tile("sodium", "Sodium", "mg")}${tile("satfat", "Sat. fat", "g")}</div>${nutOn().length ? `<div class="grid">${nutOn().map(k => tile(k, nutOf(k).name, nutOf(k).unit, true)).join("")}</div>` : ""}<div class="fine" id="est-note" style="margin-top:8px" ${blankK && !fixedFood ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div></div>`;
   const part = isPlate ? platePartial(sheet.rows) : [];
   const rows = () => `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>The whole thing makes</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? plateWord(sheet.word) : manyWord(plateWord(sheet.word))}</span></span><button id="mk-up">+</button></span></div>${wordRow()}` +
     `<div class="per"><div class="rowhead"><span>${sheet.rows.length ? builtLine(sheet.rows) : "Nothing in it yet."}</span><span></span></div><div id="ings" style="margin-top:0">` + sheet.rows.map(r => { const g = rowGaps(r, part); return `<div class="ing"><div><div class="in">${esc(r.name)}</div><div class="is">${r.src === "usda" ? "USDA estimate" : "yours"}${g ? " · " + g : ""}</div></div><div class="ia">${amountText(r.unit, r.amount)}</div><div class="ik tn">${fmt(scale(r.per, r.amount).kcal)}<i>kcal</i></div></div>`; }).join("") + `</div></div>` +
