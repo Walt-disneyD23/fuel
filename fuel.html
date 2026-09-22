@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921g · a fuel log, not a diet app.
+  Fuel · build 0921j · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -221,6 +221,17 @@ input.name:focus, .ate input:focus, .row input.num:focus { box-shadow:0 0 0 2px 
 .log { display:block; width:100%; margin-top:16px; border:0; border-radius:16px; background:var(--acc); color:var(--onacc); font:700 18px var(--fb); padding:16px; }
 .log:disabled { opacity:.4; }
 .log.soft { background:var(--field); color:var(--ink); margin-top:10px; }
+/* Snap a label (0921h): the photo in the card, three quiet dots while the read is in flight */
+.snapph { flex:0 0 auto; width:64px; height:84px; border-radius:12px; overflow:hidden; background:var(--field); } .snapph img { width:100%; height:100%; object-fit:cover; display:block; }
+.snapph.wide { width:100%; height:230px; border-radius:16px; margin-bottom:16px; } .snapph.wide img { object-position:50% 18%; }
+.snapw { display:flex; flex-direction:column; gap:5px; min-width:0; } .snapw b { font:600 16px var(--fb); } .snapw.ctr { align-items:center; text-align:center; margin:4px 0 6px; } .snapw.ctr b { font-size:18px; }
+.dots { display:inline-flex; gap:6px; height:12px; align-items:center; } .dots i { width:7px; height:7px; border-radius:50%; background:var(--acc); animation:blink 1.2s infinite ease-in-out; } .dots i:nth-child(2) { animation-delay:.2s; } .dots i:nth-child(3) { animation-delay:.4s; }
+@keyframes blink { 0%, 80%, 100% { opacity:.25; } 40% { opacity:1; } }
+.snaprow { display:flex; gap:14px; align-items:center; margin-bottom:14px; } .snapph.two { display:flex; gap:4px; width:auto; background:transparent; } .snapph.two img { width:48px; border-radius:8px; }
+.nt2 { margin:8px 2px 0; padding-left:12px; border-left:2px solid var(--line); }
+.zero { border:0; background:var(--field); color:var(--acc); font:600 12px var(--fb); padding:3px 9px; border-radius:8px; margin-left:6px; vertical-align:1px; }
+.snapw .addp { display:inline-flex; align-items:center; gap:6px; border:0; background:var(--field); border-radius:10px; padding:6px 10px; font:600 13px var(--fb); color:var(--ink); } .snapw .addp svg { color:var(--ink2); }
+#snap-view { position:fixed; inset:0; z-index:99; background:rgba(0,0,0,.92); display:flex; align-items:center; justify-content:center; padding:24px; } #snap-view img { max-width:100%; max-height:100%; border-radius:12px; }
 .log[hidden] { display:none; }
 .quiet { display:block; width:100%; margin-top:10px; border:0; border-radius:16px; background:transparent; color:var(--ink2); font:600 15px var(--fb); padding:12px; }
 .row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-top:1px solid var(--line); font-size:15px; }
@@ -309,6 +320,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
     <div class="row"><span>Net carbs</span><button class="sw" id="net-sw" role="switch" aria-checked="false"></button></div>
     <p class="fine" style="margin:14px 0 0">Carbs minus fiber. When this is on, tap the Carbs bar on Today to flip it to net carbs and back. An entry with no fiber number counts all its carbs, and the bar says how many there are. Fuel does not subtract sugar alcohols.</p>
   </section>
+  <section class="card" id="code-card"><div id="code-body"></div><p class="fine" style="margin:14px 0 0">Snap needs the family’s own code once, on each phone. It lets this phone send label photos to the family’s reader; without it nothing is sent. The code lives on this phone only, never in the app’s file.</p></section>
   <section class="card">
     <div class="row"><span>Look</span><span class="seg" id="theme"><button data-t="light">Light</button><button data-t="auto">Auto</button><button data-t="dark">Dark</button></span></div>
     <div class="row"><span>Version</span><span class="rv" id="version"></span></div>
@@ -316,7 +328,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
     <div class="row"><span>Export</span><button class="quiet" style="width:auto;margin:0;padding:8px 12px;background:var(--field);color:var(--ink)" id="export">Save a copy</button></div>
   </section>
   <section class="card about">
-    <b>What Fuel keeps, and where.</b> Your entries, your pantry and your targets live on this phone only. This build sends nothing anywhere. A saved copy is a plain text file of the same. Fuel asks the phone to keep them even when it runs low on space; Storage, above, shows what the phone answered.<br><br>
+    <b>What Fuel keeps, and where.</b> Your entries, your pantry and your targets live on this phone only. Snap a label sends the label photo to the family’s own reader, which passes it to Anthropic to be read and keeps nothing; that is the only thing Fuel ever sends, and only when you tap Snap. A saved copy is a plain text file of the same. Fuel asks the phone to keep them even when it runs low on space; Storage, above, shows what the phone answered.<br><br>
     <b>How the read works.</b> The sentence on the tally is arithmetic on what you logged, your targets and the clock. Fuel never guesses what you ate.<br><br>
     <b>The clock is the meal.</b> Every entry keeps the time it was eaten. There are no meal names.
   </section>
@@ -332,7 +344,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921g", BUILD_DATE = "Sep 21, 2026";
+const BUILD = "0921j", BUILD_DATE = "Sep 21, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -394,7 +406,26 @@ function measureText(q, unit) { const v = snapThird(+q), w = String(unit == null
 function printedQty(text, qty) { const t = String(text == null ? "" : text).replace(/\([^)]*\)/g, "").trim(), m = t.match(/^(\d+)?\s*(?:(\d+)\s*\/\s*(\d+)|([¼½¾⅛⅜⅝⅞⅓⅔⅙⅚]))/), fr = { "⅛": .125, "¼": .25, "⅜": .375, "½": .5, "⅝": .625, "¾": .75, "⅞": .875, "⅓": 1 / 3, "⅔": 2 / 3, "⅙": 1 / 6, "⅚": 5 / 6 }; if (!m || (m[2] && !+m[3])) return qty; return (m[1] ? +m[1] : 0) + (m[2] ? +m[2] / +m[3] : fr[m[4]]); }
 function labelMeasure(sv) { if (!sv || typeof sv !== "object") return ""; const q = printedQty(sv.text, sv.qty); return q == null || sv.unit == null || sv.unit === "" ? "" : measureText(q, sv.unit); }
 function unitKey(serving) { const w = measureParts(serving || "serving").rest.trim().toLowerCase(), sp = w.lastIndexOf(" "); return w.slice(0, sp + 1) + oneWord(w.slice(sp + 1)); }
-function codeOk(c) { return String(c == null ? "" : c).trim().length >= 24; }      /* D3: the family code is five words with dashes; the Worker takes any code of 24+ characters (worker.js line 89) */
+function codeOk(c) { return String(c == null ? "" : c).trim().length >= 24; }
+/* The words when a read fails (ruled Sep 21, in place on the wait screen): a fact, whether the photo left the phone and whether it was read, that nothing was logged; one button for the next thing; Type it instead under it.
+   Mapped from every error the Worker's bytes can return, plus "offline" (fetch failed) and "timeout" (the 120 s ceiling). act: "another" opens the camera again, "retry" re-sends, "settings" opens Settings, "" is no button. */
+function failWords(code, reply) {
+  const c = String(code || ""), notes = reply && Array.isArray(reply.notes) ? reply.notes.map(String).filter(Boolean) : [];
+  if (c === "not_a_label") { let saw = notes[0] ? notes[0].trim() : ""; if (saw && !/[.!?]$/.test(saw)) saw += "."; return { fact: "That doesn\u2019t look like a nutrition label.", next: (saw ? "The read said: " + saw + " " : "") + "Nothing was logged.", act: "another", primary: "Try another photo" }; }
+  if (c === "offline") return { fact: "No connection.", next: "The photo was not sent. Nothing was logged.", act: "retry", primary: "Try again" };
+  if (c === "soft_cap") return { fact: "The family\u2019s reader has hit its hourly ceiling.", next: "It reads at most 120 labels an hour, on purpose, and turned this photo away unread. It clears within the hour.", act: "", primary: "" };
+  if (c === "token") return { fact: "This phone\u2019s family code isn\u2019t right.", next: "The reader turned the photo away unread. Check the code in Settings.", act: "settings", primary: "Open Settings" };
+  if (c === "out_of_credits" || c === "not_set_up") return { fact: "The reader\u2019s prepaid balance has run out.", next: "The photo was turned away unread. Snap waits until the balance is topped up on the laptop; everything else works.", act: "", primary: "" };
+  const why = c === "timeout" ? "The reader took too long." : c === "cut_off" ? "The label came back incomplete." : c === "refused" ? "The reader declined to read that photo." : c === "busy" || c === "upstream" ? "The reader could not be reached, or took too long." : "The photo reached the reader, but no label came back.";
+  return { fact: "The read didn\u2019t finish.", next: why + " Nothing was logged; a second try usually gets it.", act: "retry", primary: "Try again" };
+}
+/* What a read puts in the sheet: the name as read (empty when none), the eight tiles as the label printed them (a line the label lacks stays blank, never 0), the measure in the label's own words. */
+function labelSheet(read) {
+  const L = read && read.label ? read.label : {}, ps = L.perServing || {}, num = v => typeof v === "number" && isFinite(v) ? v : "";
+  const servingText = labelMeasure(L.serving) || "serving";
+  return { name: typeof L.product === "string" ? L.product.trim() : "", servingText, meas: measureOf(servingText), per: { kcal: num(ps.kcal), p: num(ps.protein), c: num(ps.carbs), f: num(ps.fat), fiber: num(ps.fiber), sugar: num(ps.sugar), sodium: num(ps.sodium), satfat: num(ps.satfat) },
+    label: { product: L.product == null ? null : String(L.product), serving: L.serving || null, servingsPerContainer: L.servingsPerContainer == null ? null : String(L.servingsPerContainer), basis: L.basis || null, lines: Array.isArray(L.lines) ? L.lines : [], confidence: L.confidence || null, notes: Array.isArray(L.notes) ? L.notes.map(String) : [], photos: read && read.photos || 1, v: read && read.v || null } };
+}      /* D3: the family code is five words with dashes; the Worker takes any code of 24+ characters (worker.js line 89) */
 function bareServing(t) { const s = String(t == null ? "" : t).trim(); return !s || /^servings?$/i.test(s) || /^1 serving, a plate of \d+$/.test(s); }      /* 1a: a measure that is just the word, or a plate that makes 1 */
 function batchOf(t) { const m = String(t == null ? "" : t).trim().match(/^1 of (\d+)\b/); return m ? +m[1] : 0; }                                    /* P2: a plate that makes N, or the old typed "1 of N" */
 function perWords(t) { return bareServing(t) || batchOf(t) ? "serving" : String(t).trim(); }                                                        /* T1: "per serving"; a real measure keeps its words */
@@ -531,6 +562,7 @@ const KEY = "fuel.v1";
 const CODE_KEY = "fuel.code";                                                        /* the family code lives under its OWN key, never inside fuel.v1: Save a copy exports entries, pantry and targets, nothing else */
 function codeGet() { const c = store.get(CODE_KEY); return typeof c === "string" ? c.trim() : ""; }
 function codeSet(c) { store.set(CODE_KEY, String(c).trim()); }
+const WORKER = "https://fuel-worker.walt-disneyd23.workers.dev";                          /* the family's reader (fuel-worker, §10); the only place a label photo goes */
 const DEFAULTS = { entries: [], pantry: [], targets: { kcal: 2800, p: 150, c: 320, f: 85 }, targetsSet: false, theme: "auto", callouts: [] };
 let S = Object.assign({}, DEFAULTS, store.get(KEY) || {});
 S.targets = Object.assign({}, DEFAULTS.targets, S.targets || {});
@@ -575,7 +607,7 @@ mq.addEventListener("change", applyTheme);
 /* ================= views ================= */
 const VIEWS = ["home", "days", "add", "sheet", "settings"];
 let view = "home";
-function show(v) { view = v; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v === "days" ? "home" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "days") renderDays(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
+function show(v) { view = v; if (v !== "settings") codeEditing = false; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v === "days" ? "home" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "days") renderDays(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
 $("nav-home").onclick = () => { viewDay = null; addDay = null; show("home"); }; $("nav-add").onclick = () => { addDay = addTarget(view, viewDay, addDay, dayKey(new Date())); show("add"); }; $("nav-settings").onclick = () => { viewDay = null; addDay = null; show("settings"); };
 let toastT; function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1800); }
 
@@ -677,7 +709,7 @@ function renderFind() {
 }
 $("find").oninput = renderFind;
 $("door-type").onclick = () => openSheet({ mode: "typed" });
-$("door-snap").onclick = () => { if (!codeOk(codeGet())) return openCode(); $("snap-file").click(); };      /* D3: no code on this phone → the small sheet; else C1, straight to the camera */
+$("door-snap").onclick = () => { if (!codeOk(codeGet())) return openCode(); snap = null; $("snap-file").click(); };      /* D3: no code on this phone → the small sheet; else C1, straight to the camera */
 function openCode() {                                                                   /* D3, the mock's words: the field, the fine print, one button */
   sheet = { mode: "code", openedAt: new Date() };
   $("sheet-title").textContent = "Snap a label"; $("sheet-sub").textContent = ""; $("sheet-chg").hidden = true;
@@ -685,6 +717,38 @@ function openCode() {                                                           
   $("code-in").oninput = () => { $("code-save").disabled = !codeOk($("code-in").value); };
   $("code-save").onclick = () => { if (!codeOk($("code-in").value)) return; codeSet($("code-in").value); show("add"); $("snap-file").click(); };
   show("sheet");
+}
+/* ================= Snap a label: the photo, the read, the wait (T2), the failure words ================= */
+let snap = null;                                                                  // { photos: [{ data, url }], ctrl, t0, adding, replace, fail }: lives in memory only, never in S
+const DOTS = '<span class="dots"><i></i><i></i><i></i></span>';
+function shrinkPhoto(file) {                                                       /* the phone hands over 3024 × 4032 JPEG; the Worker gets at most 1600 px (proven in the mock's probe: 1200 × 1600, ~700 KB, rotation intact) */
+  return new Promise((res, rej) => { const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => { try { const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k), c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(img, 0, 0, w, h); const d = c.toDataURL("image/jpeg", 0.85); URL.revokeObjectURL(url); res({ data: d.slice(d.indexOf(",") + 1), url: d, w, h }); } catch (e) { rej(e); } };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("photo")); }; img.src = url; });
+}
+$("snap-file").onchange = ev => { const f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if (!f) return; shrinkPhoto(f).then(snapTake, () => toast("Fuel could not read that photo.")); };
+function snapTake(ph) { if (snap && snap.adding && snap.photos.length < 3) snap.photos.push(ph); else snap = { photos: [ph] }; startRead(); }
+function snapCancel() { if (snap && snap.ctrl) snap.ctrl.abort(); snap = null; }
+function startRead() {                                                            /* T2: the read is already in flight when the wait screen appears */
+  if (!snap) return; if (snap.ctrl) snap.ctrl.abort(); const ctrl = new AbortController(); Object.assign(snap, { ctrl, t0: Date.now(), adding: false, replace: false, fail: null, timedOut: false });
+  renderSnap();
+  const timer = setTimeout(() => { snap && snap.ctrl === ctrl && (snap.timedOut = true); ctrl.abort(); }, 120000);
+  fetch(WORKER + "/label", { method: "POST", headers: { "Content-Type": "application/json", "X-Fuel-Token": codeGet() }, body: JSON.stringify({ images: snap.photos.map(p => ({ data: p.data, media_type: "image/jpeg" })) }), signal: ctrl.signal })
+    .then(r => r.json().catch(() => ({ ok: false, error: "unreadable" })))
+    .then(j => { clearTimeout(timer); if (!snap || snap.ctrl !== ctrl) return; if (j && j.ok) openSheet({ mode: "label", read: j, photos: snap.photos, secs: Math.round((Date.now() - snap.t0) / 1000) }); else snapFail(j && j.error || "unreadable", j); })
+    .catch(() => { clearTimeout(timer); if (!snap || snap.ctrl !== ctrl) return; snapFail(snap.timedOut ? "timeout" : "offline"); });
+}
+function snapFail(code, reply) { if (!snap) return; snap.fail = failWords(code, reply); renderSnap(); }
+function renderSnap() {                                                           /* the wait screen, or the failure words in its place; the photo stays */
+  if (!snap) return; sheet = { mode: "snap", openedAt: new Date() }; const n = snap.photos.length, last = snap.photos[n - 1];
+  $("sheet-title").textContent = "Snap a label"; $("sheet-sub").textContent = ""; $("sheet-sub").hidden = false; $("sheet-chg").hidden = true;
+  $("sheet").innerHTML = `<div class="snapph wide"><img src="${last.url}" alt=""></div>` + (snap.fail
+    ? `<div class="snapw ctr"><b>${esc(snap.fail.fact)}</b><span class="fine">${esc(snap.fail.next)}</span></div>${snap.fail.primary ? `<button class="log soft" id="snap-act">${esc(snap.fail.primary)}</button>` : ""}<button class="quiet" id="snap-type">Type it instead</button>`
+    : `<div class="snapw ctr"><b>Reading the label</b>${DOTS}<span class="fine">Usually about 10 seconds. ${snap.again ? "The check screen comes back with every number read again; one you changed by hand is replaced." : "The check screen comes up when it lands."}</span></div>` + (n < 3 ? `<button class="log soft" id="snap-more">Add another photo</button><p class="fine" style="margin:12px 2px 0">For a label that wraps round a cup, or the front for the name. The read starts again with ${n === 1 ? "both" : "all three"} photos.</p>` : ""));
+  const more = $("snap-more"); if (more) more.onclick = () => { snap.adding = true; $("snap-file").click(); };
+  const act = $("snap-act"); if (act) act.onclick = () => { const a = snap.fail.act; if (a === "retry") startRead(); else if (a === "another") { snap.adding = false; $("snap-file").click(); } else if (a === "settings") { snapCancel(); show("settings"); } };
+  const ty = $("snap-type"); if (ty) ty.onclick = () => { snapCancel(); openSheet({ mode: "typed" }); };
+  if (view !== "sheet") show("sheet");
 }
 $("sheet-back").onclick = () => sheetBack();
 
@@ -756,6 +820,7 @@ function renderIng() {
 }
 function sheetBack() {
   if (sheet && (sheet.mode === "manage" || sheet.mode === "follow")) return manageBack();
+  if (sheet && sheet.mode === "snap") { snapCancel(); return show("add"); }
   if (sheet && sheet.mode === "edit") return show("home");
   if (sheet && sheet.mode === "plate" && plate) { plate.makes = sheet.makes; plate.name = sheet.name; }
   const y = sheet && sheet.mode === "ing" && plate ? plate.scrollY : 0;
@@ -782,9 +847,10 @@ function openSheet(o) {
   if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
   if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
   if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; sheet.meas = { n: "1", unit: "", word: "", open: false }; }
+  if (o.mode === "label") { const r = labelSheet(o.read); sheet.src = "label"; sheet.name = r.name; sheet.per = r.per; sheet.servingText = r.servingText; sheet.meas = Object.assign(r.meas, { open: false }); sheet.label = r.label; sheet.snap = { photos: o.photos || [], secs: o.secs || 0 }; snap = null; }      /* 0921h: the photos ride in the sheet for K2's row, never in S */
   if (o.mode === "plate") { const pt = plateTotals(plate.rows); sheet.src = "plate"; sheet.rows = plate.rows; sheet.makes = plate.makes || 1; sheet.name = plate.name || ""; sheet.per = { kcal: pt.kcal, p: pt.p, c: pt.c, f: pt.f }; sheet.servingText = plateServing(sheet.makes, plate.rows.length); }
   sheet.timeSet = true; if (addDay && o.mode !== "edit" && addDay !== dayKey(now)) { sheet.day = addDay; sheet.at = keyDate(addDay); sheet.timeSet = false; }
-  $("sheet-title").textContent = o.mode === "pantry" && sheet.src === "usda" && !S.pantry.some(p => p.id === o.item.id) ? "Starter pantry" : { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit", plate: "Build a plate" }[o.mode];
+  $("sheet-title").textContent = o.mode === "pantry" && sheet.src === "usda" && !S.pantry.some(p => p.id === o.item.id) ? "Starter pantry" : { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit", plate: "Build a plate", label: "Snap a label" }[o.mode];
   $("sheet-sub").textContent = o.mode === "typed" ? "entered" : o.mode === "plate" ? plateHead(plate.rows) : (SRC[sheet.src] || "entered");
   const can = o.mode === "pantry" && S.pantry.some(p => p.id === o.item.id); $("sheet-chg").hidden = !can; $("sheet-sub").hidden = can; $("sheet-chg").onclick = () => openManage(S.pantry.find(p => p.id === o.item.id));
   show("sheet"); renderSheet();
@@ -802,25 +868,36 @@ function sheetTotals() {
   return { est, basis, tot };
 }
 function netHero(tot) { return netOn() && +tot.c > 0 ? `<span class="co">Net carbs <b>${netHeroText(tot.c, tot.x ? tot.x.fiber : null)}</b></span><br>` : ""; }      /* F1, H2 */
-function netNote(c, fiber, partial, per, canType) { if (!netOn()) return ""; const p = netNoteParts(c, fiber, partial, canType); return p ? `<div class="netnote">Net carbs <b>${p.n}</b> ${esc(per)} <span>${p.why}</span></div>` : ""; }      /* F2, Z3 */
+function netNote(c, fiber, partial, per, canType, noLine) { if (!netOn()) return ""; const p = netNoteParts(c, fiber, partial, canType && !noLine); if (!p) return ""; const why = noLine && !partial && netCarbs(c, fiber) == null ? 'no fiber line on the label <button class="zero" id="zero-fiber">Count it as 0</button>' : p.why; return `<div class="netnote">Net carbs <b>${p.n}</b> ${esc(per)} <span>${why}</span></div>`; }      /* F2, Z3; B2 (0921i): the 0 is the person's to give */
+function noFiberLine() { return !!(sheet && sheet.mode === "label" && sheet.label && !(sheet.label.lines || []).some(l => l && l.key === "dietary_fiber")); }
+function wireZero() { const z = $("zero-fiber"); if (z) z.onclick = () => { sheet.per.fiber = "0"; const inp = $("sheet").querySelector('input[data-k="fiber"]'); if (inp) inp.value = "0"; refreshTotals(); }; }
+function snapRow() {                                                              /* K2: the photo row; A2: the pill, gone after three */
+  const ph = sheet.snap.photos, n = ph.length, lines = (sheet.label.lines || []).length;
+  const th = n === 1 ? `<div class="snapph" data-ph="0"><img src="${ph[0].url}" alt=""></div>` : `<div class="snapph two">${ph.map((p, i) => `<img src="${p.url}" alt="" data-ph="${i}">`).join("")}</div>`;
+  return `<div class="snaprow" style="margin-bottom:16px">${th}<div class="snapw"><b>Read from the label</b><span class="fine">${n > 1 ? n + " photos, " : ""}${lines} line${lines === 1 ? "" : "s"} read in ${sheet.snap.secs} s. Tap ${n > 1 ? "a" : "the"} photo to see it.</span>${n < 3 ? `<span class="t" style="margin-top:6px"><button class="msr addp" id="snap-add">Add a photo${CARET.replace("<svg", '<svg style="transform:rotate(-90deg)"')}</button></span>` : ""}</div></div>`;
+}
+function showPhoto(url) { let v = $("snap-view"); if (!v) { v = document.createElement("div"); v.id = "snap-view"; v.innerHTML = '<img alt="">'; v.onclick = () => v.remove(); document.body.appendChild(v); } v.querySelector("img").src = url; }
+function wireSnapRow() { $("sheet").querySelectorAll("[data-ph]").forEach(el => el.onclick = () => showPhoto(sheet.snap.photos[+el.dataset.ph].url)); const ad = $("snap-add"); if (ad) ad.onclick = () => { snap = { photos: sheet.snap.photos.slice(), adding: true, again: true }; $("snap-file").click(); }; }      /* F2, Z3 */
 function renderSheet() {
-  const t = sheetTotals(), tot = t.tot, typed = sheet.mode === "typed", isPlate = sheet.mode === "plate", whole = typed || isPlate, prow = isPlate ? sheet.rows : (sheet.item && sheet.item.plate) || null, editable = typed || sheet.mode === "edit" && !sheet.entry.per, ateWords = ateLabel(sheet.at, sheet.openedAt, sheet.mode === "edit", sheet.timeSet, new Date());
+  const t = sheetTotals(), tot = t.tot, fromLabel = sheet.mode === "label", typed = sheet.mode === "typed" || fromLabel, isPlate = sheet.mode === "plate", whole = typed || isPlate, prow = isPlate ? sheet.rows : (sheet.item && sheet.item.plate) || null, editable = typed || sheet.mode === "edit" && !sheet.entry.per, ateWords = ateLabel(sheet.at, sheet.openedAt, sheet.mode === "edit", sheet.timeSet, new Date());
   const part = prow && !isPlate ? platePartial(prow) : [];
   const cell = (k, label, unit) => part.includes(k) ? `<div class="cell${netOn() && k === "fiber" ? " co" : ""}"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${k === "kcal" && t.est ? " est" : ""}${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
   const canLog = (+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0;
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
+    (fromLabel && sheet.snap ? snapRow() : "") +
     `<input class="name" id="sh-name" value="${esc(sheet.name)}" placeholder="${whole ? "Name it to keep it in the pantry" : "Name"}">` +
-    (whole && !sheet.topOpen ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing is" : "What you typed is"}</span><span class="t"><button class="msr" id="top-fold">${esc(foldWords(sheet.makes, typed ? measNow(sheet.meas) : ""))}${CARET}</button></span></div>` : "") +
+    (whole && !sheet.topOpen ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing is" : fromLabel ? "The label says" : "What you typed is"}</span><span class="t"><button class="msr" id="top-fold">${esc(foldWords(sheet.makes, typed ? measNow(sheet.meas) : ""))}${CARET}</button></span></div>` : "") +
     (typed && sheet.topOpen ? `<div id="ms"></div>` : "") +
-    (whole && sheet.topOpen ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button>${isPlate ? `<button class="msr up" id="top-up" aria-label="Done" style="width:auto;height:auto;font-size:inherit">${CARET}</button>` : ""}</span></div>` : "") +
+    (whole && sheet.topOpen && !fromLabel ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? "serving" : "servings"}</span></span><button id="mk-up">+</button>${isPlate ? `<button class="msr up" id="top-up" aria-label="Done" style="width:auto;height:auto;font-size:inherit">${CARET}</button>` : ""}</span></div>` : "") +
     `<div class="step"><button id="sv-dn" ${sheet.servings <= 0.5 ? "disabled" : ""}>−</button><div class="val"><div class="n">${stepText(sheet.servings)}</div><div class="u">${whole && sheet.topOpen ? (sheet.servings === 1 ? "serving" : "servings") + " eaten" : esc(eatenLine(typed ? typedServing() : isPlate ? plateServing(sheet.makes, sheet.rows.length) : sheet.servingText, sheet.servings))}</div></div><button id="sv-up">+</button></div>` +
     `<div class="herot"><div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div></div>` +
     builtHtml(prow, isPlate ? roTiles(platePer(sheet.rows, sheet.makes), platePartial(sheet.rows), "built from ingredients, per " + perWords(plateServing(sheet.makes, sheet.rows.length))) : "") +
-    (isPlate ? "" : `<div class="per"><div class="rowhead"><span>${typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(perWords(sheet.servingText))}</span><span>${editable ? "tap to change" : ""}</span></div>` +
+    (isPlate ? "" : `<div class="per"><div class="rowhead"><span>${fromLabel ? "Read from the label" : typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(perWords(sheet.servingText))}</span><span>${editable ? "tap to change" : ""}</span></div>` +
     `<div class="grid">${cell("kcal", "Calories", "")}${cell("p", "Protein", "g")}${cell("c", "Carbs", "g")}${cell("f", "Fat", "g")}</div><div class="grid">${cell("fiber", "Fiber", "g")}${cell("sugar", "Sugar", "g")}${cell("sodium", "Sodium", "mg")}${cell("satfat", "Sat. fat", "g")}</div>` +
-    `<div id="net-note">${netNote(t.basis.c, t.basis.x.fiber, part.includes("fiber"), "per " + perWords(typed ? "" : sheet.servingText), typed)}</div>` +
+    `<div id="net-note">${netNote(t.basis.c, t.basis.x.fiber, part.includes("fiber"), "per " + perWords(typed ? "" : sheet.servingText), typed, noFiberLine())}</div>` +
     `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div>${part.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`) +
+    (fromLabel && sheet.label.notes.length ? `<div class="notes"><div class="rowhead" style="margin-top:16px"><span>The read says</span><span></span></div>${sheet.label.notes.map(x => `<p class="fine nt2">${esc(x)}</p>`).join("")}</div>` : "") +
     (whole ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
     `<div class="ate"><span>Ate at</span><span class="t"><span class="tw${sheet.timeSet ? "" : " unset"}"><input type="time" id="sh-time" value="${sheet.timeSet ? hh + ":" + mm : ""}"><span class="setit">set a time</span></span>${ateWords ? `<span class="now">${esc(ateWords)}</span>` : ""}</span></div>` +
     (sheet.late ? `<div class="fine late" id="late-note">${esc(lateNote(sheet.mode === "edit"))}</div>` : "") +
@@ -833,10 +910,11 @@ function renderSheet() {
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
   if (whole && !sheet.topOpen) $("top-fold").onclick = () => { sheet.topOpen = true; if (typed) sheet.meas.open = true; renderSheet(); };
   if (whole && sheet.topOpen && isPlate) $("top-up").onclick = () => { sheet.topOpen = false; renderSheet(); };
-  if (whole) { if (sheet.topOpen) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; } const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
+  if (whole) { if (sheet.topOpen && $("mk-dn")) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; } const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
   $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (!ev.target.value || isNaN(h) || isNaN(m)) { if (sheet.day) sheet.timeSet = false; refreshAte(); return; } const d = new Date(sheet.at); d.setHours(h, m, 0, 0); const c = clampAte(d, new Date()); sheet.at = c.at; sheet.late = c.late; sheet.timeSet = true; if (c.late && sheet.mode !== "edit") sheet.openedAt = new Date(c.at); refreshAte(); };
   if (typed && sheet.topOpen) wireMeas($("ms"), sheet.meas, () => { if (!sheet.meas.open) { sheet.topOpen = false; renderSheet(); } });
   $("sh-log").onclick = () => commitSheet(false);
+  wireZero(); if (fromLabel && sheet.snap) wireSnapRow();
   const kb = $("sh-keep"); if (kb) kb.onclick = () => commitSheet(true);
   const bl = $("built"); if (bl) bl.onclick = () => { sheet.showIngs = !sheet.showIngs; $("ings").hidden = !sheet.showIngs; bl.querySelector("span").textContent = sheet.showIngs ? "Tap to hide them." : "Tap to see them."; };
   const del = $("sh-del"); if (del) del.onclick = () => { if (!confirm("Delete " + (sheet.name || "this entry") + "?")) return; S.entries = S.entries.filter(e => e.id !== sheet.entry.id); save(); toast("Deleted"); show("home"); };
@@ -850,7 +928,7 @@ function refreshAte() {                                  /* 0919c: patches the A
   let ln = $("late-note"); if (sheet.late) { if (!ln) { ln = document.createElement("div"); ln.className = "fine late"; ln.id = "late-note"; seat.parentNode.after(ln); } ln.textContent = lateNote(sheet.mode === "edit"); } else if (ln) ln.remove();
   refreshTotals();
 }
-function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), "per " + perWords(sheet.mode === "typed" ? "" : sheet.servingText), sheet.mode === "typed"); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0) || sheet.timeSet === false; }
+function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), "per " + perWords(sheet.mode === "typed" || sheet.mode === "label" ? "" : sheet.servingText), sheet.mode === "typed" || sheet.mode === "label", noFiberLine()); wireZero(); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0) || sheet.timeSet === false; }
 function commitSheet(keepOnly) {
   const t = sheetTotals(), name = sheet.name.trim();
   if (sheet.mode === "edit") {
@@ -858,11 +936,11 @@ function commitSheet(keepOnly) {
     save(); toast("Saved"); show("home"); return;
   }
   const per = sheet.mode === "plate" ? platePer(sheet.rows, sheet.makes) : { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x };
-  if (sheet.mode === "typed") sheet.servingText = typedServing();
+  if (sheet.mode === "typed" || sheet.mode === "label") sheet.servingText = typedServing();
   let pantryId = sheet.item ? sheet.item.id : null;
   if (sheet.item && !S.pantry.some(p => p.id === sheet.item.id)) S.pantry.unshift(sheet.item);
-  if (sheet.mode === "typed" && (sheet.keep || keepOnly === true) && name) {
-    const item = { id: uid(), name, serving: typedServing(), per, src: "typed", added: Date.now(), used: [] };
+  if ((sheet.mode === "typed" || sheet.mode === "label") && (sheet.keep || keepOnly === true) && name) {
+    const item = { id: uid(), name, serving: typedServing(), per, src: sheet.mode, added: Date.now(), used: [] }; if (sheet.mode === "label") item.label = sheet.label;
     S.pantry.unshift(item); pantryId = item.id; sheet.servingText = item.serving;
   }
   if (sheet.mode === "plate") {
@@ -952,7 +1030,16 @@ function removeManage() {
 }
 
 /* ================= settings ================= */
+let codeEditing = false;
+function renderCodeCard() {                                                       /* D3: not set up → the field and Save; ready → the last four and a quiet Change */
+  const box = $("code-body"), code = codeGet(), state = code && !codeEditing ? "ready" : "empty"; if (box.dataset.state === state && state === "empty" && $("code-in2")) return; box.dataset.state = state;
+  if (state === "ready") { box.innerHTML = `<div class="row"><span>Snap a label</span><span class="rv">ready<span>code ends in ${esc(code.slice(-4))}</span></span></div><div class="row"><span>Family code</span><button class="quiet" style="width:auto;margin:0;padding:8px 12px;background:var(--field);color:var(--ink)" id="code-change">Change</button></div>`; $("code-change").onclick = () => { codeEditing = true; renderCodeCard(); }; return; }
+  box.innerHTML = `<div class="row"><span>Snap a label</span><span class="rv">${code ? "ready" : "not set up"}</span></div><input class="name" style="margin-top:12px" id="code-in2" placeholder="Paste the family code" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button class="quiet" style="width:100%;margin:10px 0 0;padding:12px;background:var(--field);color:var(--ink)" id="code-save2" disabled>Save</button>`;
+  $("code-in2").oninput = () => { $("code-save2").disabled = !codeOk($("code-in2").value); };
+  $("code-save2").onclick = () => { if (!codeOk($("code-in2").value)) return; codeSet($("code-in2").value); codeEditing = false; renderCodeCard(); };
+}
 function renderSettings() {
+  renderCodeCard();
   ["kcal", "p", "c", "f"].forEach(k => { $("t-" + k).value = S.targets[k]; });
   $("version").innerHTML = `${BUILD}<span>${BUILD_DATE}</span>`;
   $("net-sw").setAttribute("aria-checked", String(netOn()));
