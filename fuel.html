@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0919c · a fuel log, not a diet app.
+  Fuel · build 0921g · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -112,6 +112,8 @@ main[hidden] { display:none; }
 .door .dt { font-size:17px; font-weight:600; }
 .door .dd { font-size:13px; color:var(--ink2); margin-top:3px; }
 .door .chev { display:flex; color:var(--ink2); flex:0 0 auto; margin-left:12px; }
+.door .dm { display:flex; flex:0 0 auto; margin-right:16px; color:var(--ink); } .door .dtx { flex:1; min-width:0; }
+.hfs { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; } .door.hf { padding:16px 16px 16px 20px; } .door.hf + .door.hf { margin-top:0; }
 .sect { font-size:13px; color:var(--ink2); font-weight:500; margin:22px 4px 8px; }
 .find { display:flex; align-items:center; gap:10px; background:var(--card); border-radius:16px; padding:13px 16px; box-shadow:var(--shadow); color:var(--ink2); margin-bottom:12px; }
 .find input { flex:1; min-width:0; border:0; background:transparent; padding:0; font:600 17px var(--fb); color:var(--ink); -webkit-appearance:none; appearance:none; }
@@ -279,8 +281,9 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
   <label class="find"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="find" type="search" placeholder="Find a food" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></label>
   <div id="results" hidden></div>
   <div id="add-body">
-  <button class="door" id="door-type"><span><span class="dt">Type it</span><span class="dd" style="display:block">Protein, carbs, fat. Calories auto or your own. Name it to keep it.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
-  <button class="door" id="door-plate"><span><span class="dt">Build a plate</span><span class="dd" style="display:block">Find each ingredient, tap +. Fuel adds it up and keeps the plate.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
+  <button class="door" id="door-snap"><span class="dm"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.2a2.2 2.2 0 0 1 2.2-2.2h1.9l1.3-2.1a1.4 1.4 0 0 1 1.2-.7h4.8a1.4 1.4 0 0 1 1.2.7L16.9 7h1.9A2.2 2.2 0 0 1 21 9.2v8.1a2.2 2.2 0 0 1-2.2 2.2H5.2A2.2 2.2 0 0 1 3 17.3z"/><circle cx="12" cy="13" r="3.6"/></svg></span><span class="dtx"><span class="dt">Snap a label</span><span class="dd" style="display:block">The Nutrition Facts, in a photo or two. The front, if you want the name.</span></span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>
+  <div class="hfs"><button class="door hf" id="door-type"><span class="dt">Type it</span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="door hf" id="door-plate"><span class="dt">Build a plate</span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
+  <input type="file" id="snap-file" accept="image/*" capture="environment" hidden>
   <div class="sect" id="repeat-head">Your pantry</div>
   <div id="repeat"></div>
   </div>
@@ -329,7 +332,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0919c", BUILD_DATE = "Sep 20, 2026";
+const BUILD = "0921g", BUILD_DATE = "Sep 21, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -385,9 +388,13 @@ const NOBEND = { oz: 1, g: 1, tbsp: 1, tsp: 1, ml: 1, l: 1, lb: 1, kg: 1, medium
 function manyWord(w) { const l = w.toLowerCase(); if (MANY[l]) return MANY[l]; for (const k in MANY) if (MANY[k] === l) return w; if (!l || NOBEND[l] || /[^s]s$/.test(l)) return w; if (/[^aeiou]y$/.test(l)) return w.slice(0, -1) + "ies"; if (/(s|x|z|ch|sh)$/.test(l)) return w + "es"; return w + "s"; }
 function oneWord(w) { const l = w.toLowerCase(); for (const k in MANY) if (MANY[k] === l) return k; if (MANY[l] || NOBEND[l] || l.length < 4 || /(us|is)$/.test(l)) return w; if (/ies$/.test(l)) return w.slice(0, -3) + "y"; if (/(ss|x|z|ch|sh)es$/.test(l)) return w.slice(0, -2); if (/[^s]s$/.test(l)) return w.slice(0, -1); return w; }
 const UNITS = ["cup", "oz", "tbsp", "slice", "piece", "scoop", "g"];
-function snapThird(v) { const w = Math.floor(v), f = v - w; return Math.abs(f - 1 / 3) < 0.0051 ? w + 1 / 3 : Math.abs(f - 2 / 3) < 0.0071 ? w + 2 / 3 : v; }
+function snapThird(v) { const w = Math.floor(v), f = v - w; return Math.abs(f - 1 / 3) < 0.0051 ? w + 1 / 3 : Math.abs(f - 2 / 3) < 0.0071 ? w + 2 / 3 : Math.abs(f - 1 / 6) < 0.0071 ? w + 1 / 6 : Math.abs(f - 5 / 6) < 0.0051 ? w + 5 / 6 : v; }      /* 0921f: sixths too (.16, .17 → ⅙; .83 → ⅚), the way thirds were ruled in 0918c */
 function measureText(q, unit) { const v = snapThird(+q), w = String(unit == null ? "" : unit).trim().replace(/\s+/g, " "); if (q === "" || q == null || !w || !isFinite(v) || v <= 0) return ""; const sp = w.lastIndexOf(" "); return qtyText(v) + " " + w.slice(0, sp + 1) + (v > 1 ? manyWord(w.slice(sp + 1)) : oneWord(w.slice(sp + 1))); }
+/* 0921f, the Snap cut: a label is a document. When it prints a fraction ("1/6 pie (130g)", "1 1/2 cups") that fraction is the measure; the Worker's rounded qty (0.1667) is the fallback. Parentheses are skipped; the quantity leads the text. */
+function printedQty(text, qty) { const t = String(text == null ? "" : text).replace(/\([^)]*\)/g, "").trim(), m = t.match(/^(\d+)?\s*(?:(\d+)\s*\/\s*(\d+)|([¼½¾⅛⅜⅝⅞⅓⅔⅙⅚]))/), fr = { "⅛": .125, "¼": .25, "⅜": .375, "½": .5, "⅝": .625, "¾": .75, "⅞": .875, "⅓": 1 / 3, "⅔": 2 / 3, "⅙": 1 / 6, "⅚": 5 / 6 }; if (!m || (m[2] && !+m[3])) return qty; return (m[1] ? +m[1] : 0) + (m[2] ? +m[2] / +m[3] : fr[m[4]]); }
+function labelMeasure(sv) { if (!sv || typeof sv !== "object") return ""; const q = printedQty(sv.text, sv.qty); return q == null || sv.unit == null || sv.unit === "" ? "" : measureText(q, sv.unit); }
 function unitKey(serving) { const w = measureParts(serving || "serving").rest.trim().toLowerCase(), sp = w.lastIndexOf(" "); return w.slice(0, sp + 1) + oneWord(w.slice(sp + 1)); }
+function codeOk(c) { return String(c == null ? "" : c).trim().length >= 24; }      /* D3: the family code is five words with dashes; the Worker takes any code of 24+ characters (worker.js line 89) */
 function bareServing(t) { const s = String(t == null ? "" : t).trim(); return !s || /^servings?$/i.test(s) || /^1 serving, a plate of \d+$/.test(s); }      /* 1a: a measure that is just the word, or a plate that makes 1 */
 function batchOf(t) { const m = String(t == null ? "" : t).trim().match(/^1 of (\d+)\b/); return m ? +m[1] : 0; }                                    /* P2: a plate that makes N, or the old typed "1 of N" */
 function perWords(t) { return bareServing(t) || batchOf(t) ? "serving" : String(t).trim(); }                                                        /* T1: "per serving"; a real measure keeps its words */
@@ -521,6 +528,9 @@ const store = (() => {
   };
 })();
 const KEY = "fuel.v1";
+const CODE_KEY = "fuel.code";                                                        /* the family code lives under its OWN key, never inside fuel.v1: Save a copy exports entries, pantry and targets, nothing else */
+function codeGet() { const c = store.get(CODE_KEY); return typeof c === "string" ? c.trim() : ""; }
+function codeSet(c) { store.set(CODE_KEY, String(c).trim()); }
 const DEFAULTS = { entries: [], pantry: [], targets: { kcal: 2800, p: 150, c: 320, f: 85 }, targetsSet: false, theme: "auto", callouts: [] };
 let S = Object.assign({}, DEFAULTS, store.get(KEY) || {});
 S.targets = Object.assign({}, DEFAULTS.targets, S.targets || {});
@@ -667,6 +677,15 @@ function renderFind() {
 }
 $("find").oninput = renderFind;
 $("door-type").onclick = () => openSheet({ mode: "typed" });
+$("door-snap").onclick = () => { if (!codeOk(codeGet())) return openCode(); $("snap-file").click(); };      /* D3: no code on this phone → the small sheet; else C1, straight to the camera */
+function openCode() {                                                                   /* D3, the mock's words: the field, the fine print, one button */
+  sheet = { mode: "code", openedAt: new Date() };
+  $("sheet-title").textContent = "Snap a label"; $("sheet-sub").textContent = ""; $("sheet-chg").hidden = true;
+  $("sheet").innerHTML = `<p class="fine" style="margin:0 0 14px;font-size:15px;color:var(--ink)">Snap needs the family’s own code once, on this phone.</p><input class="name" id="code-in" placeholder="Paste the family code" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><p class="fine" style="margin:12px 2px 0">It lets this phone send label photos to the family’s reader; without it nothing is sent. The code lives on this phone only, never in the app’s file.</p><button class="log" id="code-save" disabled>Save and open the camera</button>`;
+  $("code-in").oninput = () => { $("code-save").disabled = !codeOk($("code-in").value); };
+  $("code-save").onclick = () => { if (!codeOk($("code-in").value)) return; codeSet($("code-in").value); show("add"); $("snap-file").click(); };
+  show("sheet");
+}
 $("sheet-back").onclick = () => sheetBack();
 
 /* ================= build a plate (ruled B: stay in the picker) ================= */
@@ -693,10 +712,10 @@ function renderPicker() {
   const shut = new Set(plate.editing ? plate.editing.exclude : []), inIds = new Set(plate.rows.map(r => r.itemId)), hit = p => !shut.has(p.id) && !inIds.has(p.id) && (!q || p.name.toLowerCase().includes(q));
   const mine = (q ? S.pantry : repeatOrder(S.pantry, new Date())).filter(hit), have = new Set(S.pantry.map(p => p.id)), starter = q ? STARTER.filter(p => !have.has(p.id) && hit(p)) : [];
   const card = p => `<button class="pi pick" data-add="${p.id}"><span><span class="pn">${mark(p)}${q ? markHit(p.name, q) : esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span><span class="plus" aria-hidden="true">+</span></button>`;
-  let html = "";
+  let html = !q && !plate.rows.length ? `<p class="fine" id="plate-guide" style="margin:0 4px 8px">Find each ingredient by name and tap +. Fuel adds the plate up.</p>` : "";      /* S4: the door lost its sentence; it sits here while the plate is empty */
   if (mine.length) html += `<div class="sect">Your pantry</div>` + mine.map(card).join("");
   if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(card).join("");
-  if (!mine.length && !starter.length) html += `<p class="fine" style="margin:14px 4px 0">${q ? (alreadyIn(q) || loopNote(q, shut) || "Nothing called that yet. Type it and name it first, and it can go in a plate.") : (plate.rows.length ? "Find the next ingredient, or you're done." : "Find each ingredient by name and tap +. Fuel adds the plate up.")}</p>`;
+  { const w = !mine.length && !starter.length ? (q ? (alreadyIn(q) || loopNote(q, shut) || "Nothing called that yet. Type it and name it first, and it can go in a plate.") : (plate.rows.length ? "Find the next ingredient, or you're done." : "")) : ""; if (w) html += `<p class="fine" style="margin:14px 4px 0">${w}</p>`; }
   if (plate.rows.length) html += `<div class="sect">In the plate</div>` + plate.rows.map((r, i) => `<div class="pi on"><button class="pt" data-open="${i}"><span class="pn" style="display:block">${mark(r)}${esc(r.name)}</span><span class="ps" style="display:block" id="rs-${i}">${rowSub(r)}</span></button><span class="amt"><button class="plus mn" data-dn="${i}" aria-label="Less" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><button class="plus" data-up="${i}" aria-label="More">+</button></span></div>`).join("");
   html += `<button class="log" id="plate-done" style="margin-top:18px" ${plate.rows.length ? "" : "disabled"}>${plate.rows.length ? "Done, " + plate.rows.length + " in" : "Done"}</button>`;
   R.innerHTML = html;
