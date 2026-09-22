@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921y · a fuel log, not a diet app.
+  Fuel · build 0921z · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -365,7 +365,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921y", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921z", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -622,6 +622,7 @@ function wrapNut(days7, key) {      /* the week's nutrient: the day sums, averag
   for (const es of days7) { if (!es.length) continue; const d = dayNut(es, key); logged++; v += d.v; gaps += d.gaps; part += d.part; n += d.n; }
   return { v: logged ? Math.round(v / logged) : 0, gaps, part, n, logged };
 }
+function pickerMissWords(q) { return "Nothing called \u201c" + String(q == null ? "" : q).trim() + "\u201d yet. Add it here and it joins the recipe:"; }      /* 0921z (B2): the doors sit under this line */
 function wrapNutTail(d) { return d.n && d.gaps === d.n && !d.v ? "" : " a day"; }      /* 0921y: "a day" follows an average; "no number" is not one (the owner's glass, IMG_3456) */
 /* @fuel:pure:end */
 
@@ -885,12 +886,14 @@ function renderPicker() {
   let html = !q && !plate.rows.length ? `<p class="fine" id="plate-guide" style="margin:0 4px 8px">Find each ingredient by name and tap +. Fuel adds the recipe up.</p>` : "";      /* S4: the door lost its sentence; it sits here while the plate is empty */
   if (mine.length) html += `<div class="sect">Your pantry</div>` + mine.map(card).join("");
   if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(card).join("");
-  { const w = !mine.length && !starter.length ? (q ? (alreadyIn(q) || loopNote(q, shut) || "Nothing called that yet. Type it and name it first, and it can go in a recipe.") : (plate.rows.length ? "Find the next ingredient, or you're done." : "")) : ""; if (w) html += `<p class="fine" style="margin:14px 4px 0">${w}</p>`; }
-  if (plate.rows.length) html += `<div class="sect">In the plate</div>` + plate.rows.map((r, i) => `<div class="pi on"><button class="pt" data-open="${i}"><span class="pn" style="display:block">${mark(r)}${esc(r.name)}</span><span class="ps" style="display:block" id="rs-${i}">${rowSub(r)}</span></button><span class="amt"><button class="plus mn" data-dn="${i}" aria-label="Less" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><button class="plus" data-up="${i}" aria-label="More">+</button></span></div>`).join("");
+  { const miss = !mine.length && !starter.length && q && !alreadyIn(q) && !loopNote(q, shut), w = !mine.length && !starter.length ? (q ? (alreadyIn(q) || loopNote(q, shut) || pickerMissWords($("find").value)) : (plate.rows.length ? "Find the next ingredient, or you're done." : "")) : ""; if (w) html += `<p class="fine" style="margin:14px 4px 0">${miss ? esc(w) : w}</p>`;
+    if (miss) html += `<div class="hfs"><button class="door hf" id="pk-snap"><span class="dt">Snap its label</span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="door hf" id="pk-type"><span class="dt">Type it</span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>`; }      /* 0921z (B2): the way in from the picker */
+  if (plate.rows.length) html += `<div class="sect">In the recipe</div>` + plate.rows.map((r, i) => `<div class="pi on"><button class="pt" data-open="${i}"><span class="pn" style="display:block">${mark(r)}${esc(r.name)}</span><span class="ps" style="display:block" id="rs-${i}">${rowSub(r)}</span></button><span class="amt"><button class="plus mn" data-dn="${i}" aria-label="Less" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><button class="plus" data-up="${i}" aria-label="More">+</button></span></div>`).join("");
   html += `<button class="log" id="plate-done" style="margin-top:18px" ${plate.rows.length ? "" : "disabled"}>${plate.rows.length ? "Done, " + plate.rows.length + " in" : "Done"}</button>`;
   R.innerHTML = html;
   R.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { plate.rows.unshift(plateRow(findItem(b.dataset.add), 1)); $("find").value = ""; renderAddHead(); renderPicker(); });
   R.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openIng(+b.dataset.open));
+  { const pt = $("pk-type"), ps = $("pk-snap"); if (pt) pt.onclick = () => { plate.adding = true; openSheet({ mode: "typed", name: $("find").value.trim() }); }; if (ps) ps.onclick = () => { if (!codeOk(codeGet())) return openCode(); plate.adding = true; snap = null; $("snap-file").click(); }; }      /* 0921z: a sheet opened from here is for the recipe */
   const nudge = (i, dir) => { const r = plate.rows[i]; r.amount = plateStep(r.amount, dir); $("rs-" + i).textContent = rowSub(r); $("plate-sub").textContent = plateHead(plate.rows); R.querySelector(`[data-dn="${i}"]`).disabled = r.amount <= 0.5; };   // in place: nothing redraws under the finger
   R.querySelectorAll("[data-dn]").forEach(b => b.onclick = () => nudge(+b.dataset.dn, -1));
   R.querySelectorAll("[data-up]").forEach(b => b.onclick = () => nudge(+b.dataset.up, 1));
@@ -925,6 +928,7 @@ function renderIng() {
   $("ig-rm").onclick = () => { plate.rows.splice(sheet.idx, 1); sheetBack(); };
 }
 function sheetBack() {
+  if (plate) plate.adding = false;      /* 0921z */
   if (sheet && (sheet.mode === "manage" || sheet.mode === "follow")) return manageBack();
   if (sheet && sheet.mode === "snap") { snapCancel(); return show("add"); }
   if (sheet && sheet.mode === "edit") return show("home");
@@ -957,7 +961,8 @@ function openSheet(o) {
   if (o.mode === "pantry") { sheet.item = o.item; sheet.name = o.item.name; sheet.per = Object.assign({}, o.item.per, o.item.per.x || {}, o.item.per.n || {}); if (o.item.label) sheet.label = o.item.label; sheet.part = { np: o.item.per.np || {}, xp: o.item.per.xp || {} }; sheet.src = o.item.src === "usda" ? "usda" : "pantry"; sheet.servingText = o.item.serving || "serving"; }
   if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; if (e.per) sheet.part = { np: e.per.np || {}, xp: e.per.xp || {} }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
   if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; if (e.per) sheet.part = { np: e.per.np || {}, xp: e.per.xp || {} }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
-  if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; sheet.meas = { n: "1", unit: "", word: "", open: false }; }
+  if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; sheet.meas = { n: "1", unit: "", word: "", open: false }; if (o.name) sheet.name = o.name; }
+  if ((o.mode === "typed" || o.mode === "label") && plate && plate.adding) sheet.forPlate = true;      /* 0921z: the sheet's one button is Add to the recipe */
   if (o.mode === "label") { const r = labelSheet(o.read); sheet.src = "label"; sheet.name = r.name; sheet.per = r.per; sheet.servingText = r.servingText; sheet.meas = Object.assign(r.meas, { open: false }); sheet.label = r.label; sheet.snap = { photos: o.photos || [], secs: o.secs || 0 }; if (!(snap && snap.adding)) snap = null; }      /* 0921h: the photos ride in the sheet for K2's row, never in S. 0921n: unless the camera is open for another photo, which then joins this read */
   if (o.mode === "plate") { const pt = plateTotals(plate.rows); sheet.src = "plate"; sheet.rows = plate.rows; sheet.makes = plate.makes || 1; sheet.name = plate.name || ""; sheet.word = plate.word || ""; sheet.per = { kcal: pt.kcal, p: pt.p, c: pt.c, f: pt.f }; sheet.servingText = plateServing(sheet.makes, plate.rows.length, sheet.word); }
   sheet.timeSet = true; if (addDay && o.mode !== "edit" && addDay !== dayKey(now)) { sheet.day = addDay; sheet.at = keyDate(addDay); sheet.timeSet = false; }
@@ -997,7 +1002,7 @@ function renderSheet() {
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
     (fromLabel && sheet.snap ? snapRow() : "") +
-    (sheet.mode === "pantry" ? `<div class="iname" style="margin-bottom:4px">${esc(sheet.name)}</div>` : `<input class="name" id="sh-name" autocomplete="off" value="${esc(sheet.name)}" placeholder="${whole ? "Name it to keep it in the pantry" : "Name"}">`) +      /* 0921o (N1): a pantry item is renamed behind Edit, never here */
+    (sheet.mode === "pantry" ? `<div class="iname" style="margin-bottom:4px">${esc(sheet.name)}</div>` : `<input class="name" id="sh-name" autocomplete="off" value="${esc(sheet.name)}" placeholder="${sheet.forPlate ? "Name it to add it to the recipe" : whole ? "Name it to keep it in the pantry" : "Name"}">`) +      /* 0921o (N1): a pantry item is renamed behind Edit, never here */
     (whole && !sheet.topOpen ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing is" : fromLabel ? "The label says" : "What you typed is"}</span><span class="t"><button class="msr" id="top-fold">${esc(isPlate ? plateFold(sheet.makes, sheet.word) : foldWords(sheet.makes, typed ? measNow(sheet.meas) : ""))}${CARET}</button></span></div>` : "") +
     (typed && sheet.topOpen ? `<div id="ms"></div>` : "") +
     (whole && sheet.topOpen && !fromLabel ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? plateWord(sheet.word) : manyWord(plateWord(sheet.word))}</span></span><button id="mk-up">+</button>${isPlate ? `<button class="msr up" id="top-up" aria-label="Done" style="width:auto;height:auto;font-size:inherit">${CARET}</button>` : ""}</span></div>${isPlate ? wordRow() : ""}` : "") +
@@ -1009,11 +1014,11 @@ function renderSheet() {
     `<div id="net-note">${netNote(t.basis.c, t.basis.x.fiber, part.includes("fiber"), "per " + perWords(typed ? "" : sheet.servingText), typed, noFiberLine())}</div>` +
     `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div>${part.length ? `<div class="fine pnote" style="margin-top:8px">* At least: an ingredient has no number for it.</div>` : ""}</div>`) + labelFoldHtml() +
     (fromLabel && sheet.label.notes.length ? `<div class="notes"><div class="rowhead" style="margin-top:16px"><span>The read says</span><span></span></div>${sheet.label.notes.map(x => `<p class="fine nt2">${esc(x)}</p>`).join("")}</div>` : "") +
-    (whole ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
-    `<div class="ate"><span>Ate at</span><span class="t"><span class="tw${sheet.timeSet ? "" : " unset"}"><input type="time" id="sh-time" value="${sheet.timeSet ? hh + ":" + mm : ""}"><span class="setit">set a time</span></span>${ateWords ? `<span class="now">${esc(ateWords)}</span>` : ""}</span></div>` +
+    (whole && !sheet.forPlate ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
+    (sheet.forPlate ? "" : `<div class="ate"><span>Ate at</span><span class="t"><span class="tw${sheet.timeSet ? "" : " unset"}"><input type="time" id="sh-time" value="${sheet.timeSet ? hh + ":" + mm : ""}"><span class="setit">set a time</span></span>${ateWords ? `<span class="now">${esc(ateWords)}</span>` : ""}</span></div>`) +
     (sheet.late ? `<div class="fine late" id="late-note">${esc(lateNote(sheet.mode === "edit"))}</div>` : "") +
-    `<button class="log" id="sh-log" ${canLog && sheet.timeSet ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>` +
-    (whole ? `<button class="log soft" id="sh-keep" ${canLog ? "" : "disabled"} ${sheet.name.trim() ? "" : "hidden"}>Add to your pantry only</button>` : "") +
+    (sheet.forPlate ? "" : `<button class="log" id="sh-log" ${canLog && sheet.timeSet ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>`) +
+    (whole ? `<button class="log${sheet.forPlate ? "" : " soft"}" id="sh-keep" ${canLog ? "" : "disabled"} ${sheet.name.trim() ? "" : "hidden"}>${sheet.forPlate ? "Add to the recipe" : "Add to your pantry only"}</button>` : "") +
     (sheet.mode === "edit" ? `<button class="quiet" id="sh-del">Delete this entry</button>` : "");
   { const nm = $("sh-name"); if (nm) nm.oninput = ev => { sheet.name = ev.target.value; const ko = $("sh-keep"); if (ko) ko.hidden = !sheet.name.trim(); const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } const kl = $("keep-lbl"); if (kl) kl.textContent = "Keep in the pantry" + (sheet.name.trim() ? "" : " (name it first)"); }; }
   $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.disabled = !editable; inp.oninput = () => { sheet.per[inp.dataset.k] = inp.value; refreshTotals(); }; });
@@ -1022,10 +1027,10 @@ function renderSheet() {
   if (whole && !sheet.topOpen) $("top-fold").onclick = () => { sheet.topOpen = true; if (typed) sheet.meas.open = true; renderSheet(); };
   { const lf = $("lbl-fold"); if (lf) lf.onclick = () => { sheet.labelOpen = !sheet.labelOpen; renderSheet(); }; }
   if (whole && sheet.topOpen && isPlate) $("top-up").onclick = () => { sheet.topOpen = false; renderSheet(); };
-  if (whole) { if (sheet.topOpen && $("mk-dn")) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; } { const pw = $("pl-word"); if (pw) { pw.oninput = () => { sheet.word = pw.value; }; pw.onchange = () => renderSheet(); } } const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
-  $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (!ev.target.value || isNaN(h) || isNaN(m)) { if (sheet.day) sheet.timeSet = false; refreshAte(); return; } const d = new Date(sheet.at); d.setHours(h, m, 0, 0); const c = clampAte(d, new Date()); sheet.at = c.at; sheet.late = c.late; sheet.timeSet = true; if (c.late && sheet.mode !== "edit") sheet.openedAt = new Date(c.at); refreshAte(); };
+  if (whole) { if (sheet.topOpen && $("mk-dn")) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; } { const pw = $("pl-word"); if (pw) { pw.oninput = () => { sheet.word = pw.value; }; pw.onchange = () => renderSheet(); } } const k = $("keep"); if (k) k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
+  { const st = $("sh-time"); if (st) st.onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (!ev.target.value || isNaN(h) || isNaN(m)) { if (sheet.day) sheet.timeSet = false; refreshAte(); return; } const d = new Date(sheet.at); d.setHours(h, m, 0, 0); const c = clampAte(d, new Date()); sheet.at = c.at; sheet.late = c.late; sheet.timeSet = true; if (c.late && sheet.mode !== "edit") sheet.openedAt = new Date(c.at); refreshAte(); }; }
   if (typed && sheet.topOpen) wireMeas($("ms"), sheet.meas, () => { if (!sheet.meas.open) { sheet.topOpen = false; renderSheet(); } });
-  $("sh-log").onclick = () => commitSheet(false);
+  { const lg = $("sh-log"); if (lg) lg.onclick = () => commitSheet(false); }
   wireZero(); if (fromLabel && sheet.snap) wireSnapRow();
   const kb = $("sh-keep"); if (kb) kb.onclick = () => commitSheet(true);
   const bl = $("built"); if (bl) bl.onclick = () => { sheet.showIngs = !sheet.showIngs; $("ings").hidden = !sheet.showIngs; bl.querySelector("span").textContent = sheet.showIngs ? "Tap to hide them." : "Tap to see them."; };
@@ -1060,6 +1065,7 @@ function commitSheet(keepOnly) {
     if ((sheet.keep || keepOnly === true) && name) { const item = { id: uid(), name, serving: sheet.servingText, per, src: "plate", added: Date.now(), used: [], makes: sheet.makes, word: plateWord(sheet.word) === "serving" ? "" : String(sheet.word).trim(), plate: sheet.rows.map(r => plateRow({ id: r.itemId, name: r.name, serving: r.unit, src: r.src, per: r.per }, r.amount)) }; S.pantry.unshift(item); pantryId = item.id; }
     plate = null;
   }
+  if (keepOnly === true && sheet.forPlate && plate) { if (!name) return; const it = S.pantry.find(p => p.id === pantryId); if (it) plate.rows.unshift(plateRow(it, 1)); plate.adding = false; save(); $("find").value = ""; toast("In your pantry, and in the recipe."); show("add"); return; }      /* 0921z */
   if (keepOnly === true) { if (!name) return; save(); $("find").value = ""; toast("In your pantry. Nothing logged."); if (sheet.day) { viewDay = sheet.day; addDay = null; show("home"); } else show("add"); return; }
   const entry = Object.assign({ id: uid(), t: sheet.at.toISOString(), src: sheet.mode === "typed" ? "typed" : (sheet.src || "typed"), name, servings: sheet.servings, per, servingText: sheet.servingText, est: t.est }, t.tot);
   if (sheet.label && Array.isArray(sheet.label.lines) && sheet.label.lines.length) entry.label = sheet.label;
