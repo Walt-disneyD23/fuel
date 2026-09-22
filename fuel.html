@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921t · a fuel log, not a diet app.
+  Fuel · build 0921u · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -356,7 +356,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921t", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921u", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -566,10 +566,17 @@ function nutDiv(o, m) { const r = {}; for (const k in (o || {})) r[k] = o[k] / m
 function nutMul(o, m) { const r = {}; for (const k in (o || {})) r[k] = o[k] * m; return r; }
 function nutR1(o) { const r = {}; for (const k in (o || {})) r[k] = r1(o[k]); return r; }
 function nutFmt(v, unit) { return (unit === "g" ? String(r1(v)) : fmt(v)) + " " + unit; }
-function dayNut(entries, key) { let v = 0, gaps = 0; for (const e of entries) { let x = e.n ? nutNum(e.n[key]) : null; if (x == null && e.label) { const lv = lineValue(e.label.lines, key); if (lv != null) x = lv * (+e.servings || 1); } if (x == null) { gaps++; const p = e.np ? nutNum(e.np[key]) : null; if (p != null) v += p; } else v += x; } return { v: r1(v), gaps, n: entries.length }; }      /* 0921p: a recipe's part-sum counts toward "at least" */      /* an entry without the number is a gap; a switch turned on later reads the label's own lines back */
+function dayNut(entries, key) { let v = 0, gaps = 0, part = 0; for (const e of entries) { let x = e.n ? nutNum(e.n[key]) : null; if (x == null && e.label) { const lv = lineValue(e.label.lines, key); if (lv != null) x = lv * (+e.servings || 1); } if (x == null) { gaps++; const p = e.np ? nutNum(e.np[key]) : null; if (p != null) { v += p; part++; } } else v += x; } return { v: r1(v), gaps, n: entries.length, part }; }      /* 0921u: part = how many of the gaps knew a part */      /* 0921p: a recipe's part-sum counts toward "at least" */      /* an entry without the number is a gap; a switch turned on later reads the label's own lines back */
 function nutVal(d, target, unit, past) { const t = +target || 0; if (d.n && d.gaps === d.n && !d.v) return past ? "no number" : "no number yet"; return (d.gaps ? "at least " : "") + nutFmt(d.v, unit) + (t ? " of " + nutFmt(t, unit) + (d.v > t ? ", " + (unit === "g" ? String(r1(d.v - t)) : fmt(d.v - t)) + " over" : "") : ""); }      /* "at least" is the mirror of net carbs' "up to"; over is a number */
 function nutWord(key) { const x = nutOf(key); return x ? x.name.charAt(0).toLowerCase() + x.name.slice(1) : key; }
-function nutGapLine(list) { const g = list.filter(x => x.gaps > 0); return g.length ? g.map((x, i) => (i ? (x.gaps === 1 ? "1 has" : x.gaps + " have") : (x.gaps === 1 ? "1 entry has" : x.gaps + " entries have")) + " no " + nutWord(x.key) + " number").join(", ") + "." : ""; }
+function nutGapLine(list) {      /* 0921u: THE PART IS NOT A HOLE — an entry that knows part of its potassium is counted, but no longer called an entry with no number */
+  const holes = list.map(x => ({ key: x.key, n: x.gaps - (x.part || 0) })).filter(x => x.n > 0), parts = list.filter(x => (x.part || 0) > 0).map(x => ({ key: x.key, n: x.part }));
+  if (!holes.length && !parts.length) return "";
+  const hc = holes.map((x, i) => (i ? (x.n === 1 ? "1 has" : x.n + " have") : (x.n === 1 ? "1 entry has" : x.n + " entries have")) + " no " + nutWord(x.key) + " number").join(", ");
+  const same = holes.length === 1 && parts.length === 1 && holes[0].key === parts[0].key;
+  const pc = parts.map((x, i) => { const one = x.n === 1, who = i || hc ? String(x.n) : (one ? "1 entry" : x.n + " entries"), verb = i ? "" : (one ? " knows only part" : " know only part"), of = same ? "" : " of " + (one ? "its " : "their ") + nutWord(x.key); return who + verb + of; }).join(", ");
+  return (hc ? hc + (pc ? "; " + pc : "") : pc) + ".";
+}
 function plateNut(rows) { const t = {}, partial = [], part = {}; for (const x of NUT) { const known = rows.filter(r => r.per.n && nutNum(r.per.n[x.key]) != null); if (!known.length) continue; const sum = r1(known.reduce((a, r) => a + nutNum(r.per.n[x.key]) * r.amount, 0)); if (known.length < rows.length) { partial.push(x.key); part[x.key] = sum; continue; } t[x.key] = sum; } return { n: t, partial, part }; }      /* THE PARTIAL LAW: whole only when every ingredient knows it */
 function lineText(l) { const a = typeof l.amount === "number" && isFinite(l.amount) ? String(l.amount) : "\u2013"; return (l.lessThan ? "less than " : "") + a + (l.unit ? " " + l.unit : "") + (l.dv != null ? " \u00b7 " + l.dv + "%" : ""); }
 const TILE_LINES = ["calories", "total_fat", "saturated_fat", "sodium", "total_carbohydrate", "dietary_fiber", "total_sugars", "protein"];
@@ -938,7 +945,7 @@ function renderSheet() {
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
     (fromLabel && sheet.snap ? snapRow() : "") +
-    (sheet.mode === "pantry" ? `<div class="iname" style="margin-bottom:4px">${esc(sheet.name)}</div>` : `<input class="name" id="sh-name" value="${esc(sheet.name)}" placeholder="${whole ? "Name it to keep it in the pantry" : "Name"}">`) +      /* 0921o (N1): a pantry item is renamed behind Edit, never here */
+    (sheet.mode === "pantry" ? `<div class="iname" style="margin-bottom:4px">${esc(sheet.name)}</div>` : `<input class="name" id="sh-name" autocomplete="off" value="${esc(sheet.name)}" placeholder="${whole ? "Name it to keep it in the pantry" : "Name"}">`) +      /* 0921o (N1): a pantry item is renamed behind Edit, never here */
     (whole && !sheet.topOpen ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing is" : fromLabel ? "The label says" : "What you typed is"}</span><span class="t"><button class="msr" id="top-fold">${esc(isPlate ? plateFold(sheet.makes, sheet.word) : foldWords(sheet.makes, typed ? measNow(sheet.meas) : ""))}${CARET}</button></span></div>` : "") +
     (typed && sheet.topOpen ? `<div id="ms"></div>` : "") +
     (whole && sheet.topOpen && !fromLabel ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? plateWord(sheet.word) : manyWord(plateWord(sheet.word))}</span></span><button id="mk-up">+</button>${isPlate ? `<button class="msr up" id="top-up" aria-label="Done" style="width:auto;height:auto;font-size:inherit">${CARET}</button>` : ""}</span></div>${isPlate ? wordRow() : ""}` : "") +
@@ -1014,7 +1021,7 @@ function commitSheet(keepOnly) {
 function manageHead() { const it = sheet.item; $("sheet-title").textContent = "In your pantry"; $("sheet-sub").textContent = it.plate ? plateHead(sheet.rows) : (SRC[it.src] || "entered"); $("sheet-sub").hidden = false; $("sheet-chg").hidden = true; }
 function openManage(item) {
   const flat = Object.assign({}, item.per, item.per.x || {}, item.per.n || {}); delete flat.x; delete flat.n; delete flat.npartial; delete flat.np; for (const k in flat) if (flat[k] == null) flat[k] = "";
-  sheet = { mode: "manage", item, name: item.name, per: flat, makes: item.makes || 1, word: item.word || "", rows: item.plate ? item.plate.map(rowCopy) : null, meas: Object.assign(measureOf(item.plate || item.src === "usda" ? "" : item.serving), { open: false }) };
+  sheet = { mode: "manage", item, name: item.name, per: flat, makes: item.makes || 1, word: item.word || "", label: item.label || null, labelOpen: false, rows: item.plate ? item.plate.map(rowCopy) : null, meas: Object.assign(measureOf(item.plate || item.src === "usda" ? "" : item.serving), { open: false }) };
   show("sheet"); manageHead(); renderManage();
 }
 function managePer() { const p = sheet.per, num = v => v === "" || v == null || isNaN(+v) ? null : +v, g = k => r1(+p[k] || 0), kc = num(p.kcal); return { kcal: kc == null ? kcalFromGrams(g("p"), g("c"), g("f")) : Math.round(kc), p: g("p"), c: g("c"), f: g("f"), x: { fiber: num(p.fiber), sugar: num(p.sugar), sodium: num(p.sodium), satfat: num(p.satfat) }, n: nutPer(p) }; }
@@ -1036,9 +1043,10 @@ function renderManage() {
     `<button class="log soft" id="mg-ings" style="margin-top:16px">Change the ingredients</button>`;
   $("sheet").innerHTML = fixedFood
     ? `<div class="iname">${esc(it.name)}</div>` + tiles() + `<p class="fine" style="margin:14px 0 0">A starter food keeps USDA's name and numbers. Removed, it goes back to the starter pantry, and Find still has it.</p><button class="log soft" id="mg-rm" style="margin-top:16px">Remove from your pantry</button>`
-    : `<input class="name" id="mg-name" value="${esc(sheet.name)}" placeholder="Name">` + (isPlate ? rows() : `<div id="ms"></div>` + tiles()) + `<p class="fine" style="margin:14px 0 0">What you already logged keeps its numbers.</p><button class="log" id="mg-save" ${manageOk() ? "" : "disabled"}>Save the changes</button><button class="quiet" id="mg-rm">Remove from your pantry</button>`;
+    : `<input class="name" id="mg-name" autocomplete="off" value="${esc(sheet.name)}" placeholder="Name">` + (isPlate ? rows() : `<div id="ms"></div>` + tiles() + labelFoldHtml()) + `<p class="fine" style="margin:14px 0 0">What you already logged keeps its numbers.</p><button class="log" id="mg-save" ${manageOk() ? "" : "disabled"}>Save the changes</button><button class="quiet" id="mg-rm">Remove from your pantry</button>`;
   const ok = () => { const b = $("mg-save"); if (b) b.disabled = !manageOk(); };
   const nm = $("mg-name"); if (nm) nm.oninput = ev => { sheet.name = ev.target.value; ok(); };
+  { const lf = $("lbl-fold"); if (lf) lf.onclick = () => { sheet.labelOpen = !sheet.labelOpen; renderManage(); }; }      /* 0921u: the fold on Edit too */
   if (!isPlate && !fixedFood) $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.oninput = () => {                       // in place: nothing redraws under the finger
     sheet.per[inp.dataset.k] = inp.value; const kc = $("sheet").querySelector('input[data-k="kcal"]'), blank = kc.value === "";
     kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", blank); $("est-note").hidden = !blank; ok(); }; });
