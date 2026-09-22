@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921n · a fuel log, not a diet app.
+  Fuel · build 0921o · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -149,7 +149,7 @@ main[hidden] { display:none; }
 .built { display:block; width:100%; border:0; border-top:1px solid var(--line); background:transparent; margin-top:14px; padding:12px 0 0; text-align:left; font:500 14px var(--fb); color:var(--ink2); line-height:1.45; }
 .built span { color:var(--ink); font-weight:600; }
 .cell .x span.ptl { font:600 14px var(--fb); color:var(--ink2); margin-left:0; }
-.head .chg { margin-left:auto; border:0; background:var(--card); box-shadow:var(--shadow); border-radius:12px; padding:9px 14px; font:600 14px var(--fb); color:var(--ink); }
+.head .chg { margin-left:auto; border:0; background:transparent; box-shadow:0 0 0 2px var(--acc); border-radius:12px; padding:9px 14px; font:700 14px var(--fb); color:var(--acc); }      /* 0921o (B2): Edit, outlined in the accent, the call-out's own outline */
 .inplates { margin-top:12px; border-top:1px solid var(--line); }
 .inplates div { padding:10px 0; border-bottom:1px solid var(--line); font-size:15px; font-weight:600; }
 .pi .pn .plt { vertical-align:-4px; margin-right:8px; color:var(--acc); }      /* 0921m: the recipe card, in the accent (C1) */
@@ -310,7 +310,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <!-- ============ the entry sheet ============ -->
 <main id="v-sheet" hidden>
-  <div class="head"><button class="back" id="sheet-back" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title" id="sheet-title">Type it</span><span class="sub" id="sheet-sub">entered</span><button class="chg" id="sheet-chg" hidden>Change</button></div>
+  <div class="head"><button class="back" id="sheet-back" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title" id="sheet-title">Type it</span><span class="sub" id="sheet-sub">entered</span><button class="chg" id="sheet-chg" hidden>Edit</button></div>
   <section class="card" id="sheet"></section>
 </main>
 
@@ -353,7 +353,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921n", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921o", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -933,7 +933,7 @@ function renderSheet() {
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
     (fromLabel && sheet.snap ? snapRow() : "") +
-    `<input class="name" id="sh-name" value="${esc(sheet.name)}" placeholder="${whole ? "Name it to keep it in the pantry" : "Name"}">` +
+    (sheet.mode === "pantry" ? `<div class="iname" style="margin-bottom:4px">${esc(sheet.name)}</div>` : `<input class="name" id="sh-name" value="${esc(sheet.name)}" placeholder="${whole ? "Name it to keep it in the pantry" : "Name"}">`) +      /* 0921o (N1): a pantry item is renamed behind Edit, never here */
     (whole && !sheet.topOpen ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing is" : fromLabel ? "The label says" : "What you typed is"}</span><span class="t"><button class="msr" id="top-fold">${esc(isPlate ? plateFold(sheet.makes, sheet.word) : foldWords(sheet.makes, typed ? measNow(sheet.meas) : ""))}${CARET}</button></span></div>` : "") +
     (typed && sheet.topOpen ? `<div id="ms"></div>` : "") +
     (whole && sheet.topOpen && !fromLabel ? `<div class="ate" style="margin-top:12px;padding-top:0;border:0"><span>${isPlate ? "The whole thing makes" : "What you typed makes"}</span><span class="step small" style="margin:0;gap:8px"><button id="mk-dn" ${sheet.makes <= 1 ? "disabled" : ""}>−</button><span class="val"><span class="n tn">${sheet.makes}</span><span class="u" style="display:block">${sheet.makes === 1 ? plateWord(sheet.word) : manyWord(plateWord(sheet.word))}</span></span><button id="mk-up">+</button>${isPlate ? `<button class="msr up" id="top-up" aria-label="Done" style="width:auto;height:auto;font-size:inherit">${CARET}</button>` : ""}</span></div>${isPlate ? wordRow() : ""}` : "") +
@@ -951,7 +951,7 @@ function renderSheet() {
     `<button class="log" id="sh-log" ${canLog && sheet.timeSet ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>` +
     (whole ? `<button class="log soft" id="sh-keep" ${canLog ? "" : "disabled"} ${sheet.name.trim() ? "" : "hidden"}>Add to your pantry only</button>` : "") +
     (sheet.mode === "edit" ? `<button class="quiet" id="sh-del">Delete this entry</button>` : "");
-  $("sh-name").oninput = ev => { sheet.name = ev.target.value; const ko = $("sh-keep"); if (ko) ko.hidden = !sheet.name.trim(); const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } const kl = $("keep-lbl"); if (kl) kl.textContent = "Keep in the pantry" + (sheet.name.trim() ? "" : " (name it first)"); };
+  { const nm = $("sh-name"); if (nm) nm.oninput = ev => { sheet.name = ev.target.value; const ko = $("sh-keep"); if (ko) ko.hidden = !sheet.name.trim(); const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } const kl = $("keep-lbl"); if (kl) kl.textContent = "Keep in the pantry" + (sheet.name.trim() ? "" : " (name it first)"); }; }
   $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.disabled = !editable; inp.oninput = () => { sheet.per[inp.dataset.k] = inp.value; refreshTotals(); }; });
   $("sv-dn").onclick = () => { sheet.servings = Math.max(0.5, sheet.servings - 0.5); renderSheet(); };
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
