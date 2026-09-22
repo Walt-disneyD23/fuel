@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921x · a fuel log, not a diet app.
+  Fuel · build 0921y · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -365,7 +365,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921x", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921y", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -622,6 +622,7 @@ function wrapNut(days7, key) {      /* the week's nutrient: the day sums, averag
   for (const es of days7) { if (!es.length) continue; const d = dayNut(es, key); logged++; v += d.v; gaps += d.gaps; part += d.part; n += d.n; }
   return { v: logged ? Math.round(v / logged) : 0, gaps, part, n, logged };
 }
+function wrapNutTail(d) { return d.n && d.gaps === d.n && !d.v ? "" : " a day"; }      /* 0921y: "a day" follows an average; "no number" is not one (the owner's glass, IMG_3456) */
 /* @fuel:pure:end */
 
 /* ================= the starter pantry — USDA SR28 via fuel-pantry-seed.json; change both together ================= */
@@ -769,7 +770,7 @@ function renderWrap() {
   if (!w) { $("wrap").innerHTML = `<section class="card"><div class="read" style="margin:0">Nothing was logged.</div></section>`; return; }
   const ds = nutOn().map(k => Object.assign({ key: k }, wrapNut(days7, k)));
   $("wrap").innerHTML = `<section class="card"><div class="wt">${wrapTiles(w, tg).map(t => `<div class="wtile"><div class="wn">${esc(t[0])}</div><div class="wl">${esc(t[1])}</div></div>`).join("")}</div>` +
-    ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${nutVal(d, nutTarget(d.key), nutOf(d.key).unit, true)}<span> a day</span></span></div></div>`).join("") + (nutGapLine(ds, true) ? `<div class="netline">${esc(nutGapLine(ds, true))}</div>` : "") +
+    ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${nutVal(d, nutTarget(d.key), nutOf(d.key).unit, true)}${wrapNutTail(d) ? `<span>${wrapNutTail(d)}</span>` : ""}</span></div></div>`).join("") + (nutGapLine(ds, true) ? `<div class="netline">${esc(nutGapLine(ds, true))}</div>` : "") +
     (w.foods.length ? `<div class="wsub">Logged most</div>` + w.foods.map(f => `<div class="wf"><span>${esc(f.name)}</span><span class="wc">${f.n}<span> times</span></span></div>`).join("") : "") + `</section>`;
 }
 $("wrap-back").onclick = () => show("days");
