@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921j · a fuel log, not a diet app.
+  Fuel · build 0921k · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -64,13 +64,18 @@ main[hidden] { display:none; }
 .togo strong { color:var(--ink); font-weight:600; }
 .m { margin:0 0 16px; } .m:last-of-type { margin-bottom:0; }
 .mrow { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
-.mname { font-size:15px; font-weight:600; }
-.mval { font-family:var(--fd); font-size:15px; font-weight:700; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
+.mname { font-size:17px; font-weight:600; }
+.mval { font-family:var(--fd); font-size:17px; font-weight:700; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
 .mval span { color:var(--ink2); font-family:var(--fb); font-weight:500; letter-spacing:0; }
 .track { height:10px; border-radius:6px; background:var(--track); overflow:hidden; }
 .m.flip { cursor:pointer; -webkit-tap-highlight-color:transparent; } .mname .swap { vertical-align:-2px; margin-left:4px; color:var(--ink2); }
 .track.two { display:flex; } .track.two .fill { border-radius:6px 0 0 6px; } .track.two .fill.fib { border-radius:0 6px 6px 0; background:var(--acc3); }
 .netline { margin-top:8px; font-size:13px; color:var(--ink2); font-weight:500; line-height:1.4; }
+/* nutrients (0921k): A3 rows without a track; B1 a tile for what is on (the call-out outline) and a fold for the rest; the Settings card's target box */
+.m.flat .mrow { margin-bottom:0; } .m.flat { margin-bottom:10px; }
+.grid .cell.nut { grid-column:span 2; } .lines { margin-top:10px; } .ln { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-top:1px solid var(--line); font-size:14px; } .ln span:first-child { color:var(--ink2); } .ln span:last-child { font-family:var(--fd); font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ate .msr.open svg { transform:rotate(180deg); }
+#nut-rows .row .tgt { margin-left:auto; margin-right:14px; } #nut-rows .row .tgt .num { width:70px; } #nut-rows .sw:disabled { opacity:.35; }
 .fill { height:100%; border-radius:6px; background:var(--acc); transition:width .25s ease; }
 .read { margin-top:22px; padding-top:18px; border-top:1px solid var(--line); font-size:18px; line-height:1.4; font-weight:500; }
 .notice { margin-top:14px; font-size:14px; color:var(--ink2); }
@@ -125,7 +130,7 @@ main[hidden] { display:none; }
 .pi { display:flex; align-items:center; justify-content:space-between; width:100%; border:0; background:var(--card); border-radius:16px; padding:14px 16px; box-shadow:var(--shadow); text-align:left; }
 .pi + .pi { margin-top:8px; }
 .pi .pn { font-size:16px; font-weight:600; }
-.pi .ps { font-size:13px; color:var(--ink2); margin-top:2px; }
+.pi .ps { font-size:14px; color:var(--ink2); margin-top:2px; }
 .pi .pk { font-family:var(--fd); font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .pi .pk span { font-family:var(--fb); font-size:12px; font-weight:600; color:var(--ink2); margin-left:3px; }
 /* build a plate — the picker's rows, from fuel-dish-mock.html (ruled B) */
@@ -320,6 +325,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
     <div class="row"><span>Net carbs</span><button class="sw" id="net-sw" role="switch" aria-checked="false"></button></div>
     <p class="fine" style="margin:14px 0 0">Carbs minus fiber. When this is on, tap the Carbs bar on Today to flip it to net carbs and back. An entry with no fiber number counts all its carbs, and the bar says how many there are. Fuel does not subtract sugar alcohols.</p>
   </section>
+  <section class="card" id="nut-card"><div class="row" style="border-top:0;padding-top:0"><span>Nutrients</span><span class="rv" id="nut-count"></span></div><div id="nut-rows"></div><p class="fine" style="margin:14px 0 0">A nutrient that is on gets a row on Today and a tile on every sheet, up to two at once. A target is yours to set; until then the row is a plain number. An entry with no number for it does not count, and the row says “at least” and how many. A label read keeps every line it printed, so a switch turned on later reads them back.</p></section>
   <section class="card" id="code-card"><div id="code-body"></div><p class="fine" style="margin:14px 0 0">Snap needs the family’s own code once, on each phone. It lets this phone send label photos to the family’s reader; without it nothing is sent. The code lives on this phone only, never in the app’s file.</p></section>
   <section class="card">
     <div class="row"><span>Look</span><span class="seg" id="theme"><button data-t="light">Light</button><button data-t="auto">Auto</button><button data-t="dark">Dark</button></span></div>
@@ -344,7 +350,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921j", BUILD_DATE = "Sep 21, 2026";
+const BUILD = "0921k", BUILD_DATE = "Sep 21, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -423,7 +429,7 @@ function failWords(code, reply) {
 function labelSheet(read) {
   const L = read && read.label ? read.label : {}, ps = L.perServing || {}, num = v => typeof v === "number" && isFinite(v) ? v : "";
   const servingText = labelMeasure(L.serving) || "serving";
-  return { name: typeof L.product === "string" ? L.product.trim() : "", servingText, meas: measureOf(servingText), per: { kcal: num(ps.kcal), p: num(ps.protein), c: num(ps.carbs), f: num(ps.fat), fiber: num(ps.fiber), sugar: num(ps.sugar), sodium: num(ps.sodium), satfat: num(ps.satfat) },
+  return { name: typeof L.product === "string" ? L.product.trim() : "", servingText, meas: measureOf(servingText), per: Object.assign({ kcal: num(ps.kcal), p: num(ps.protein), c: num(ps.carbs), f: num(ps.fat), fiber: num(ps.fiber), sugar: num(ps.sugar), sodium: num(ps.sodium), satfat: num(ps.satfat) }, nutFromLines(L.lines)),
     label: { product: L.product == null ? null : String(L.product), serving: L.serving || null, servingsPerContainer: L.servingsPerContainer == null ? null : String(L.servingsPerContainer), basis: L.basis || null, lines: Array.isArray(L.lines) ? L.lines : [], confidence: L.confidence || null, notes: Array.isArray(L.notes) ? L.notes.map(String) : [], photos: read && read.photos || 1, v: read && read.v || null } };
 }      /* D3: the family code is five words with dashes; the Worker takes any code of 24+ characters (worker.js line 89) */
 function bareServing(t) { const s = String(t == null ? "" : t).trim(); return !s || /^servings?$/i.test(s) || /^1 serving, a plate of \d+$/.test(s); }      /* 1a: a measure that is just the word, or a plate that makes 1 */
@@ -448,7 +454,7 @@ function amountParts(serving, amount) {
 function amountText(serving, amount) { const a = amountParts(serving, amount); return a.u ? a.n + " " + a.u : a.n; }
 function amountFromExact(serving, typed) { const n = +typed; if (typed === "" || typed == null || !isFinite(n) || n <= 0) return null; return n / measureParts(serving).q; }
 function plateStep(amount, dir) { if (dir < 0) return amount <= 0.5 ? amount : Math.max(0.5, Math.ceil(amount * 2 - 1e-9) / 2 - 0.5); return Math.min(40, Math.floor(amount * 2 + 1e-9) / 2 + 0.5); }
-function plateRow(item, amount) { const x = item.per.x || {}, num = v => v === "" || v == null || isNaN(+v) ? null : +v; return { itemId: item.id, name: item.name, amount: amount, unit: item.serving || "serving", src: item.src || "typed", per: { kcal: +item.per.kcal || 0, p: +item.per.p || 0, c: +item.per.c || 0, f: +item.per.f || 0, x: { fiber: num(x.fiber), sugar: num(x.sugar), sodium: num(x.sodium), satfat: num(x.satfat) } } }; }
+function plateRow(item, amount) { const x = item.per.x || {}, num = v => v === "" || v == null || isNaN(+v) ? null : +v; return { itemId: item.id, name: item.name, amount: amount, unit: item.serving || "serving", src: item.src || "typed", per: { kcal: +item.per.kcal || 0, p: +item.per.p || 0, c: +item.per.c || 0, f: +item.per.f || 0, x: { fiber: num(x.fiber), sugar: num(x.sugar), sodium: num(x.sodium), satfat: num(x.satfat) }, ...(item.per.n ? { n: Object.assign({}, item.per.n) } : {}) } }; }
 /* ruled 0917l: a second-row number is shown only when every ingredient knows it; known by some and not by others is "partial" (stored as unknown, never as the part-sum). */
 function platePartial(rows) { return ["fiber", "sugar", "sodium", "satfat"].filter(k => { const known = rows.filter(r => r.per.x && r.per.x[k] != null).length; return known > 0 && known < rows.length; }); }
 function rowGaps(row, partial) { const names = { fiber: "fiber", sugar: "sugar", sodium: "sodium", satfat: "sat. fat" }, miss = partial.filter(k => !row.per.x || row.per.x[k] == null); return !miss.length ? "" : miss.length > 2 ? miss.length + " numbers missing" : "no " + miss.map(k => names[k]).join(", "); }
@@ -456,11 +462,11 @@ function plateTotals(rows) {
   const t = { kcal: 0, p: 0, c: 0, f: 0, x: { fiber: null, sugar: null, sodium: null, satfat: null }, n: rows.length }, part = platePartial(rows);
   for (const r of rows) { const s = scale(r.per, r.amount); t.kcal += s.kcal; t.p += s.p; t.c += s.c; t.f += s.f; for (const k in t.x) { const v = r.per.x ? r.per.x[k] : null; if (v != null) t.x[k] = (t.x[k] || 0) + r1(v * r.amount); } }
   t.p = r1(t.p); t.c = r1(t.c); t.f = r1(t.f); for (const k in t.x) t.x[k] = t.x[k] == null || part.includes(k) ? null : r1(t.x[k]);
-  t.partial = part;
+  t.partial = part; const pn = plateNut(rows); t.n = pn.n; t.npartial = pn.partial;
   return t;
 }
-function plateBasis(rows, makes) { const t = plateTotals(rows), m = Math.max(1, +makes || 1), x = {}; for (const k in t.x) x[k] = t.x[k] == null ? null : t.x[k] / m; return { kcal: t.kcal / m, p: t.p / m, c: t.c / m, f: t.f / m, x: x }; }
-function platePer(rows, makes) { const b = plateBasis(rows, makes), x = {}; for (const k in b.x) x[k] = b.x[k] == null ? null : r1(b.x[k]); return { kcal: Math.round(b.kcal), p: r1(b.p), c: r1(b.c), f: r1(b.f), x: x }; }
+function plateBasis(rows, makes) { const t = plateTotals(rows), m = Math.max(1, +makes || 1), x = {}; for (const k in t.x) x[k] = t.x[k] == null ? null : t.x[k] / m; return { kcal: t.kcal / m, p: t.p / m, c: t.c / m, f: t.f / m, x: x, n: nutDiv(t.n, m), npartial: t.npartial }; }
+function platePer(rows, makes) { const b = plateBasis(rows, makes), x = {}; for (const k in b.x) x[k] = b.x[k] == null ? null : r1(b.x[k]); return { kcal: Math.round(b.kcal), p: r1(b.p), c: r1(b.c), f: r1(b.f), x: x, n: nutR1(b.n), npartial: b.npartial }; }
 function plateServing(makes, count) { return (makes > 1 ? "1 of " + makes + " servings" : "1 serving") + ", a plate of " + count; }
 function plateHead(rows) { return rows.length ? rows.length + " in, " + fmt(plateTotals(rows).kcal) + " kcal" : "nothing in yet"; }
 function builtLine(rows) {
@@ -541,6 +547,27 @@ function pastRead(entries, tg) {                                                
 function clampAte(d, now) { const x = new Date(d), n = new Date(now); return x > n ? { at: n, late: true } : { at: x, late: false }; }       /* no logging into the future (the owner's own ruling): now or earlier, and never silently yesterday */
 function ateLabel(at, openedAt, isEdit, timeSet, now) { const k = dayKey(at); if (k !== dayKey(now)) return dayWord(k); return timeSet && !isEdit && Math.abs(new Date(at) - new Date(openedAt)) < 60000 ? "now" : ""; }      /* the seat beside Ate at: the day when it is not today, "now" on a new entry still at the time it opened */
 function lateNote(isEdit) { return "That's later than now." + (isEdit ? "" : " To add to another day, open it from Days."); }
+
+/* nutrients (0921k; ruled Sep 21 on fuel-nutrients-mock.html: A3, B1, L1; seven switches now, the whole label later). THE TABLE MATCHES ITS SOURCE: fuel-nutrients.json (harness-j). */
+const NUT = [{"key":"potassium","name":"Potassium","unit":"mg","line":"potassium"},{"key":"magnesium","name":"Magnesium","unit":"mg","line":"other"},{"key":"calcium","name":"Calcium","unit":"mg","line":"calcium"},{"key":"iron","name":"Iron","unit":"mg","line":"iron"},{"key":"vitamin_d","name":"Vitamin D","unit":"mcg","line":"vitamin_d"},{"key":"cholesterol","name":"Cholesterol","unit":"mg","line":"cholesterol"},{"key":"added_sugars","name":"Added sugars","unit":"g","line":"added_sugars"}];
+const NUT_MAX = 2;
+function nutOf(key) { return NUT.find(x => x.key === key) || null; }
+function nutNum(v) { return v === "" || v == null || isNaN(+v) ? null : +v; }
+function lineValue(lines, key) { const x = nutOf(key); if (!x || !Array.isArray(lines)) return null; const l = lines.find(l => l && (l.key === x.line && x.line !== "other" || String(l.name || "").trim().toLowerCase() === x.name.toLowerCase())); return l && typeof l.amount === "number" && isFinite(l.amount) ? l.amount : null; }      /* by the Worker's key, or by name when it filed the line under "other" */
+function nutFromLines(lines) { const o = {}; for (const x of NUT) { const v = lineValue(lines, x.key); if (v != null) o[x.key] = v; } return o; }
+function nutPer(per, div) { const o = {}, m = div || 1; for (const x of NUT) { const v = nutNum(per ? per[x.key] : null); if (v != null) o[x.key] = v / m; } return o; }      /* the sheet's flat numbers back into n{}: only the ones typed */
+function nutDiv(o, m) { const r = {}; for (const k in (o || {})) r[k] = o[k] / m; return r; }
+function nutMul(o, m) { const r = {}; for (const k in (o || {})) r[k] = o[k] * m; return r; }
+function nutR1(o) { const r = {}; for (const k in (o || {})) r[k] = r1(o[k]); return r; }
+function nutFmt(v, unit) { return (unit === "g" ? String(r1(v)) : fmt(v)) + " " + unit; }
+function dayNut(entries, key) { let v = 0, gaps = 0; for (const e of entries) { let x = e.n ? nutNum(e.n[key]) : null; if (x == null && e.label) { const lv = lineValue(e.label.lines, key); if (lv != null) x = lv * (+e.servings || 1); } if (x == null) gaps++; else v += x; } return { v: r1(v), gaps, n: entries.length }; }      /* an entry without the number is a gap; a switch turned on later reads the label's own lines back */
+function nutVal(d, target, unit, past) { const t = +target || 0; if (d.n && d.gaps === d.n) return past ? "no number" : "no number yet"; return (d.gaps ? "at least " : "") + nutFmt(d.v, unit) + (t ? " of " + nutFmt(t, unit) + (d.v > t ? ", " + (unit === "g" ? String(r1(d.v - t)) : fmt(d.v - t)) + " over" : "") : ""); }      /* "at least" is the mirror of net carbs' "up to"; over is a number */
+function nutWord(key) { const x = nutOf(key); return x ? x.name.charAt(0).toLowerCase() + x.name.slice(1) : key; }
+function nutGapLine(list) { const g = list.filter(x => x.gaps > 0); return g.length ? g.map((x, i) => (i ? (x.gaps === 1 ? "1 has" : x.gaps + " have") : (x.gaps === 1 ? "1 entry has" : x.gaps + " entries have")) + " no " + nutWord(x.key) + " number").join(", ") + "." : ""; }
+function plateNut(rows) { const t = {}, partial = []; for (const x of NUT) { const known = rows.filter(r => r.per.n && nutNum(r.per.n[x.key]) != null); if (!known.length) continue; if (known.length < rows.length) { partial.push(x.key); continue; } t[x.key] = r1(known.reduce((a, r) => a + nutNum(r.per.n[x.key]) * r.amount, 0)); } return { n: t, partial }; }      /* THE PARTIAL LAW: whole only when every ingredient knows it */
+function lineText(l) { const a = typeof l.amount === "number" && isFinite(l.amount) ? String(l.amount) : "\u2013"; return (l.lessThan ? "less than " : "") + a + (l.unit ? " " + l.unit : "") + (l.dv != null ? " \u00b7 " + l.dv + "%" : ""); }
+const TILE_LINES = ["calories", "total_fat", "saturated_fat", "sodium", "total_carbohydrate", "dietary_fiber", "total_sugars", "protein"];
+function labelRest(lines, on) { if (!Array.isArray(lines)) return []; const shown = (on || []).map(k => { const x = nutOf(k); return x ? lines.find(l => l && (l.key === x.line && x.line !== "other" || String(l.name || "").trim().toLowerCase() === x.name.toLowerCase())) : null; }).filter(Boolean); return lines.filter(l => l && !TILE_LINES.includes(l.key) && !shown.includes(l)); }      /* what is left after the eight tiles and the switched-on ones */
 /* @fuel:pure:end */
 
 /* ================= the starter pantry — USDA SR28 via fuel-pantry-seed.json; change both together ================= */
@@ -615,6 +642,13 @@ let toastT; function toast(msg) { const t = $("toast"); t.textContent = msg; t.c
 function todayEntries(now) { const k = dayKey(now); return S.entries.filter(e => dayKey(e.t) === k).sort((a, b) => new Date(a.t) - new Date(b.t)); }
 const SWAP = ` <svg class="swap" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h13"/><path d="m17 12 4 4-4 4"/><path d="M21 16H8"/></svg>`;
 function netOn() { return Array.isArray(S.callouts) && S.callouts.includes("net"); }
+function nutState() { if (!S.nut || typeof S.nut !== "object") S.nut = { on: [], targets: {} }; if (!Array.isArray(S.nut.on)) S.nut.on = []; if (!S.nut.targets || typeof S.nut.targets !== "object") S.nut.targets = {}; return S.nut; }      /* off by default, per phone, like Net carbs */
+function nutOn() { return nutState().on.filter(k => nutOf(k)).slice(0, NUT_MAX); }
+function nutTarget(k) { return Math.max(0, Math.round(+nutState().targets[k] || 0)); }
+function nutRows(es, past) {                                                                      /* A3: rows without a track, then one gap line for all of them */
+  const on = nutOn(); if (!on.length) return ""; const ds = on.map(k => Object.assign({ key: k }, dayNut(es, k)));
+  return ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${nutVal(d, nutTarget(d.key), nutOf(d.key).unit, past)}</span></div></div>`).join("") + (nutGapLine(ds) ? `<div class="netline">${esc(nutGapLine(ds))}</div>` : "");
+}
 function carbBar(es, tot, tg) {                                                                     /* off: exactly the bar it always was. on: a flip, two faces, the face kept in S.carbFace */
   const t = tg.c, plain = (name, val, track, line) => `<div class="mrow"><span class="mname">${name}</span><span class="mval">${val}</span></div>${track}${line}`, one = `<div class="track"><div class="fill" style="width:${t ? Math.min(100, tot.c / t * 100) : 0}%"></div></div>`;
   if (!netOn()) return `<div class="m">${plain("Carbs", macroVal(tot.c, t), one, "")}</div>`;
@@ -629,7 +663,7 @@ function renderHome() {
   $("tally").innerHTML =
     `<div class="top dn"><button class="dpill" id="day-pill">${dayName(day)}${CARET}</button>${past ? "" : `<span class="tn">${clock(now)}</span>`}</div>` +
     `<div class="hero"><div class="kcal"><span class="big">${fmt(tot.kcal)}</span><span class="unit">kcal</span></div><div class="togo">${tg2.lead ? `<strong>${tg2.lead}</strong> ` : ""}${tg2.tail}</div></div>` +
-    bar("Protein", tot.p, tg.p) + carbBar(es, tot, tg) + bar("Fat", tot.f, tg.f) +
+    bar("Protein", tot.p, tg.p) + carbBar(es, tot, tg) + bar("Fat", tot.f, tg.f) + nutRows(es, !!past) +
     (read ? `<div class="read">${esc(read)}</div>` : "") +
     (S.targetsSet ? "" : `<div class="notice">These targets are a starting point. <a href="#" id="go-targets">Set yours in Settings</a>.</div>`);
   const cf = $("carb-flip"); if (cf) { const flip = () => { S.carbFace = S.carbFace === "carbs" ? "net" : "carbs"; save(); renderHome(); }; cf.onclick = flip; cf.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); flip(); } }; }
@@ -826,9 +860,13 @@ function sheetBack() {
   const y = sheet && sheet.mode === "ing" && plate ? plate.scrollY : 0;
   show("add"); if (y) window.scrollTo(0, y);
 }
+function labelFoldHtml() {                                                                  /* B1: the label's other lines under one quiet row, read-only in the label's words */
+  const rest = sheet && sheet.label ? labelRest(sheet.label.lines, nutOn()) : []; if (!rest.length) return ""; const o = !!sheet.labelOpen;
+  return `<div class="ate"><span>The label also says</span><span class="t"><button class="msr${o ? " open" : ""}" id="lbl-fold">${rest.length} more line${rest.length === 1 ? "" : "s"}${CARET}</button></span></div>` + (o ? `<div class="lines">${rest.map(l => `<div class="ln"><span>${esc(l.name || "")}</span><span>${esc(lineText(l))}</span></div>`).join("")}<p class="fine" style="margin:8px 0 0">As printed, in the label’s own words. They stay with the entry.</p></div>` : "");
+}
 function roTiles(per, partial, head) {
   const x = per.x || {}, cell = (k, label, v, unit) => partial.includes(k) ? `<div class="cell${netOn() && k === "fiber" ? " co" : ""}"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input disabled value="${v == null ? "" : v}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
-  return `<div class="per"><div class="rowhead"><span>${esc(head)}</span><span></span></div><div class="grid">${cell("kcal", "Calories", per.kcal, "")}${cell("p", "Protein", per.p, "g")}${cell("c", "Carbs", per.c, "g")}${cell("f", "Fat", per.f, "g")}</div><div class="grid">${cell("fiber", "Fiber", x.fiber, "g")}${cell("sugar", "Sugar", x.sugar, "g")}${cell("sodium", "Sodium", x.sodium, "mg")}${cell("satfat", "Sat. fat", x.satfat, "g")}</div>${netNote(per.c, x.fiber, partial.includes("fiber"), "per serving")}${partial.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`;
+  return `<div class="per"><div class="rowhead"><span>${esc(head)}</span><span></span></div><div class="grid">${cell("kcal", "Calories", per.kcal, "")}${cell("p", "Protein", per.p, "g")}${cell("c", "Carbs", per.c, "g")}${cell("f", "Fat", per.f, "g")}</div><div class="grid">${cell("fiber", "Fiber", x.fiber, "g")}${cell("sugar", "Sugar", x.sugar, "g")}${cell("sodium", "Sodium", x.sodium, "mg")}${cell("satfat", "Sat. fat", x.satfat, "g")}</div>${nutOn().length ? `<div class="grid">${nutOn().map(k => (per.npartial || []).includes(k) ? `<div class="cell co nut"><div class="l">${nutOf(k).name}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell co nut"><div class="l">${nutOf(k).name}</div><div class="x"><input disabled value="${per.n && per.n[k] != null ? per.n[k] : ""}"><span>${nutOf(k).unit}</span></div></div>`).join("")}</div>` : ""}${netNote(per.c, x.fiber, partial.includes("fiber"), "per serving")}${partial.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`;
 }
 function builtHtml(rows, tiles) {
   if (!rows || !rows.length) return "";
@@ -843,9 +881,9 @@ let sheet = null;
 function openSheet(o) {
   const now = new Date();
   sheet = { mode: o.mode, openedAt: now, servings: 1, makes: 1, at: new Date(now), name: "", per: { kcal: "", p: "", c: "", f: "", fiber: "", sugar: "", sodium: "", satfat: "" }, keep: true, est: false };
-  if (o.mode === "pantry") { sheet.item = o.item; sheet.name = o.item.name; sheet.per = Object.assign({}, o.item.per, o.item.per.x || {}); sheet.src = o.item.src === "usda" ? "usda" : "pantry"; sheet.servingText = o.item.serving || "serving"; }
-  if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
-  if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
+  if (o.mode === "pantry") { sheet.item = o.item; sheet.name = o.item.name; sheet.per = Object.assign({}, o.item.per, o.item.per.x || {}, o.item.per.n || {}); if (o.item.label) sheet.label = o.item.label; sheet.src = o.item.src === "usda" ? "usda" : "pantry"; sheet.servingText = o.item.serving || "serving"; }
+  if (o.mode === "again") { const e = o.entry; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; }
+  if (o.mode === "edit") { const e = o.entry; sheet.entry = e; sheet.name = e.name || ""; sheet.src = e.src || "typed"; sheet.at = new Date(e.t); sheet.per = e.per ? Object.assign({}, e.per, e.per.x || {}, e.per.n || {}) : { kcal: e.kcal, p: e.p, c: e.c, f: e.f }; if (e.label) sheet.label = e.label; sheet.servings = e.per && e.servings ? e.servings : 1; sheet.servingText = e.servingText || "serving"; sheet.keep = false; sheet.est = !!e.est; }
   if (o.mode === "typed") { sheet.src = "typed"; sheet.servingText = "serving"; sheet.meas = { n: "1", unit: "", word: "", open: false }; }
   if (o.mode === "label") { const r = labelSheet(o.read); sheet.src = "label"; sheet.name = r.name; sheet.per = r.per; sheet.servingText = r.servingText; sheet.meas = Object.assign(r.meas, { open: false }); sheet.label = r.label; sheet.snap = { photos: o.photos || [], secs: o.secs || 0 }; snap = null; }      /* 0921h: the photos ride in the sheet for K2's row, never in S */
   if (o.mode === "plate") { const pt = plateTotals(plate.rows); sheet.src = "plate"; sheet.rows = plate.rows; sheet.makes = plate.makes || 1; sheet.name = plate.name || ""; sheet.per = { kcal: pt.kcal, p: pt.p, c: pt.c, f: pt.f }; sheet.servingText = plateServing(sheet.makes, plate.rows.length); }
@@ -856,7 +894,7 @@ function openSheet(o) {
   show("sheet"); renderSheet();
 }
 function sheetTotals() {
-  if (sheet.mode === "plate") { const basis = plateBasis(sheet.rows, sheet.makes), tot = scale(basis, sheet.servings); tot.x = {}; for (const k in basis.x) tot.x[k] = basis.x[k] == null ? null : r1(basis.x[k] * sheet.servings); return { est: false, basis, tot }; }
+  if (sheet.mode === "plate") { const basis = plateBasis(sheet.rows, sheet.makes), tot = scale(basis, sheet.servings); tot.x = {}; for (const k in basis.x) tot.x[k] = basis.x[k] == null ? null : r1(basis.x[k] * sheet.servings); tot.n = nutR1(nutMul(basis.n, sheet.servings)); return { est: false, basis, tot }; }
   const per = sheet.per, p = +per.p || 0, c = +per.c || 0, f = +per.f || 0;
   const kcalTyped = per.kcal !== "" && per.kcal != null && !isNaN(+per.kcal);
   const perK = kcalTyped ? +per.kcal : kcalFromGrams(p, c, f);
@@ -864,7 +902,7 @@ function sheetTotals() {
   const basis = sheet.mode === "typed" ? { kcal: perK / sheet.makes, p: p / sheet.makes, c: c / sheet.makes, f: f / sheet.makes } : { kcal: perK, p, c, f };
   const X = ["fiber", "sugar", "sodium", "satfat"], bx = {}, tx = {};
   X.forEach(k => { const v = per[k], n = v === "" || v == null || isNaN(+v) ? null : +v; bx[k] = n == null ? null : (sheet.mode === "typed" ? n / sheet.makes : n); tx[k] = bx[k] == null ? null : r1(bx[k] * sheet.servings); });
-  basis.x = bx; const tot = scale(basis, sheet.servings); tot.x = tx;
+  basis.x = bx; basis.n = nutPer(per, sheet.mode === "typed" ? sheet.makes : 1); const tot = scale(basis, sheet.servings); tot.x = tx; tot.n = nutR1(nutMul(basis.n, sheet.servings));
   return { est, basis, tot };
 }
 function netHero(tot) { return netOn() && +tot.c > 0 ? `<span class="co">Net carbs <b>${netHeroText(tot.c, tot.x ? tot.x.fiber : null)}</b></span><br>` : ""; }      /* F1, H2 */
@@ -880,8 +918,8 @@ function showPhoto(url) { let v = $("snap-view"); if (!v) { v = document.createE
 function wireSnapRow() { $("sheet").querySelectorAll("[data-ph]").forEach(el => el.onclick = () => showPhoto(sheet.snap.photos[+el.dataset.ph].url)); const ad = $("snap-add"); if (ad) ad.onclick = () => { snap = { photos: sheet.snap.photos.slice(), adding: true, again: true }; $("snap-file").click(); }; }      /* F2, Z3 */
 function renderSheet() {
   const t = sheetTotals(), tot = t.tot, fromLabel = sheet.mode === "label", typed = sheet.mode === "typed" || fromLabel, isPlate = sheet.mode === "plate", whole = typed || isPlate, prow = isPlate ? sheet.rows : (sheet.item && sheet.item.plate) || null, editable = typed || sheet.mode === "edit" && !sheet.entry.per, ateWords = ateLabel(sheet.at, sheet.openedAt, sheet.mode === "edit", sheet.timeSet, new Date());
-  const part = prow && !isPlate ? platePartial(prow) : [];
-  const cell = (k, label, unit) => part.includes(k) ? `<div class="cell${netOn() && k === "fiber" ? " co" : ""}"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${k === "kcal" && t.est ? " est" : ""}${netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
+  const part = prow && !isPlate ? platePartial(prow).concat(plateNut(prow).partial) : [], non = nutOn();
+  const cell = (k, label, unit, nut) => part.includes(k) ? `<div class="cell${nut ? " co nut" : netOn() && k === "fiber" ? " co" : ""}"><div class="l">${label}</div><div class="x"><span class="ptl">partial</span></div></div>` : `<div class="cell${k === "kcal" && t.est ? " est" : ""}${nut ? " co nut" : netOn() && (k === "c" || k === "fiber") ? " co" : ""}"><div class="l">${label}</div><div class="x"><input type="number" inputmode="decimal" data-k="${k}" value="${sheet.per[k] === "" || sheet.per[k] == null ? "" : sheet.per[k]}" placeholder="${k === "kcal" ? (kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || "") : (k === "p" || k === "c" || k === "f" ? "0" : "")}">${unit ? `<span>${unit}</span>` : ""}</div></div>`;
   const canLog = (+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0;
   const hh = String(sheet.at.getHours()).padStart(2, "0"), mm = String(sheet.at.getMinutes()).padStart(2, "0");
   $("sheet").innerHTML =
@@ -894,9 +932,9 @@ function renderSheet() {
     `<div class="herot"><div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div></div>` +
     builtHtml(prow, isPlate ? roTiles(platePer(sheet.rows, sheet.makes), platePartial(sheet.rows), "built from ingredients, per " + perWords(plateServing(sheet.makes, sheet.rows.length))) : "") +
     (isPlate ? "" : `<div class="per"><div class="rowhead"><span>${fromLabel ? "Read from the label" : typed ? (sheet.makes > 1 ? "What you typed, the whole thing" : "What you typed") : (SRC[sheet.src] || "entered") + ", per " + esc(perWords(sheet.servingText))}</span><span>${editable ? "tap to change" : ""}</span></div>` +
-    `<div class="grid">${cell("kcal", "Calories", "")}${cell("p", "Protein", "g")}${cell("c", "Carbs", "g")}${cell("f", "Fat", "g")}</div><div class="grid">${cell("fiber", "Fiber", "g")}${cell("sugar", "Sugar", "g")}${cell("sodium", "Sodium", "mg")}${cell("satfat", "Sat. fat", "g")}</div>` +
+    `<div class="grid">${cell("kcal", "Calories", "")}${cell("p", "Protein", "g")}${cell("c", "Carbs", "g")}${cell("f", "Fat", "g")}</div><div class="grid">${cell("fiber", "Fiber", "g")}${cell("sugar", "Sugar", "g")}${cell("sodium", "Sodium", "mg")}${cell("satfat", "Sat. fat", "g")}</div>${non.length ? `<div class="grid">${non.map(k => cell(k, nutOf(k).name, nutOf(k).unit, true)).join("")}</div>` : ""}` +
     `<div id="net-note">${netNote(t.basis.c, t.basis.x.fiber, part.includes("fiber"), "per " + perWords(typed ? "" : sheet.servingText), typed, noFiberLine())}</div>` +
-    `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div>${part.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`) +
+    `<div class="fine" id="est-note" style="margin-top:8px" ${t.est ? "" : "hidden"}>Calories estimated from grams (4, 4 and 9 per gram). Type them to use the label's.</div>${part.length ? `<div class="fine pnote" style="margin-top:8px">Partial: an ingredient has no number for it.</div>` : ""}</div>`) + labelFoldHtml() +
     (fromLabel && sheet.label.notes.length ? `<div class="notes"><div class="rowhead" style="margin-top:16px"><span>The read says</span><span></span></div>${sheet.label.notes.map(x => `<p class="fine nt2">${esc(x)}</p>`).join("")}</div>` : "") +
     (whole ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
     `<div class="ate"><span>Ate at</span><span class="t"><span class="tw${sheet.timeSet ? "" : " unset"}"><input type="time" id="sh-time" value="${sheet.timeSet ? hh + ":" + mm : ""}"><span class="setit">set a time</span></span>${ateWords ? `<span class="now">${esc(ateWords)}</span>` : ""}</span></div>` +
@@ -909,6 +947,7 @@ function renderSheet() {
   $("sv-dn").onclick = () => { sheet.servings = Math.max(0.5, sheet.servings - 0.5); renderSheet(); };
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
   if (whole && !sheet.topOpen) $("top-fold").onclick = () => { sheet.topOpen = true; if (typed) sheet.meas.open = true; renderSheet(); };
+  { const lf = $("lbl-fold"); if (lf) lf.onclick = () => { sheet.labelOpen = !sheet.labelOpen; renderSheet(); }; }
   if (whole && sheet.topOpen && isPlate) $("top-up").onclick = () => { sheet.topOpen = false; renderSheet(); };
   if (whole) { if (sheet.topOpen && $("mk-dn")) { $("mk-dn").onclick = () => { sheet.makes = Math.max(1, sheet.makes - 1); renderSheet(); }; $("mk-up").onclick = () => { sheet.makes = Math.min(24, sheet.makes + 1); renderSheet(); }; } const k = $("keep"); k.onclick = () => { sheet.keep = !sheet.keep; k.setAttribute("aria-checked", sheet.keep); }; }
   $("sh-time").onchange = ev => { const [h, m] = ev.target.value.split(":").map(Number); if (!ev.target.value || isNaN(h) || isNaN(m)) { if (sheet.day) sheet.timeSet = false; refreshAte(); return; } const d = new Date(sheet.at); d.setHours(h, m, 0, 0); const c = clampAte(d, new Date()); sheet.at = c.at; sheet.late = c.late; sheet.timeSet = true; if (c.late && sheet.mode !== "edit") sheet.openedAt = new Date(c.at); refreshAte(); };
@@ -935,7 +974,7 @@ function commitSheet(keepOnly) {
     const e = sheet.entry; Object.assign(e, t.tot, { name, t: sheet.at.toISOString(), est: t.est }); if (e.per) e.servings = sheet.servings; else e.per = undefined;
     save(); toast("Saved"); show("home"); return;
   }
-  const per = sheet.mode === "plate" ? platePer(sheet.rows, sheet.makes) : { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x };
+  const per = sheet.mode === "plate" ? platePer(sheet.rows, sheet.makes) : { kcal: Math.round(t.basis.kcal), p: r1(t.basis.p), c: r1(t.basis.c), f: r1(t.basis.f), x: t.basis.x, n: t.basis.n };
   if (sheet.mode === "typed" || sheet.mode === "label") sheet.servingText = typedServing();
   let pantryId = sheet.item ? sheet.item.id : null;
   if (sheet.item && !S.pantry.some(p => p.id === sheet.item.id)) S.pantry.unshift(sheet.item);
@@ -950,6 +989,7 @@ function commitSheet(keepOnly) {
   }
   if (keepOnly === true) { if (!name) return; save(); $("find").value = ""; toast("In your pantry. Nothing logged."); if (sheet.day) { viewDay = sheet.day; addDay = null; show("home"); } else show("add"); return; }
   const entry = Object.assign({ id: uid(), t: sheet.at.toISOString(), src: sheet.mode === "typed" ? "typed" : (sheet.src || "typed"), name, servings: sheet.servings, per, servingText: sheet.servingText, est: t.est }, t.tot);
+  if (sheet.label && Array.isArray(sheet.label.lines) && sheet.label.lines.length) entry.label = sheet.label;
   if (pantryId) { entry.pantryId = pantryId; const item = S.pantry.find(p => p.id === pantryId); if (item) { item.used = (item.used || []).concat(entry.t).slice(-20); } }
   S.entries.push(entry); save();
   $("find").value = ""; toast("Logged, " + clock(entry.t)); viewDay = sheet.day || null; addDay = null; show("home");
@@ -963,7 +1003,7 @@ function openManage(item) {
   sheet = { mode: "manage", item, name: item.name, per: flat, makes: item.makes || 1, rows: item.plate ? item.plate.map(rowCopy) : null, meas: Object.assign(measureOf(item.plate || item.src === "usda" ? "" : item.serving), { open: false }) };
   show("sheet"); manageHead(); renderManage();
 }
-function managePer() { const p = sheet.per, num = v => v === "" || v == null || isNaN(+v) ? null : +v, g = k => r1(+p[k] || 0), kc = num(p.kcal); return { kcal: kc == null ? kcalFromGrams(g("p"), g("c"), g("f")) : Math.round(kc), p: g("p"), c: g("c"), f: g("f"), x: { fiber: num(p.fiber), sugar: num(p.sugar), sodium: num(p.sodium), satfat: num(p.satfat) } }; }
+function managePer() { const p = sheet.per, num = v => v === "" || v == null || isNaN(+v) ? null : +v, g = k => r1(+p[k] || 0), kc = num(p.kcal); return { kcal: kc == null ? kcalFromGrams(g("p"), g("c"), g("f")) : Math.round(kc), p: g("p"), c: g("c"), f: g("f"), x: { fiber: num(p.fiber), sugar: num(p.sugar), sodium: num(p.sodium), satfat: num(p.satfat) }, n: nutPer(p) }; }
 function manageItem() {
   const it = sheet.item, name = sheet.name.trim() || it.name;
   if (it.plate) return Object.assign({}, it, { name, makes: sheet.makes, plate: sheet.rows, per: platePer(sheet.rows, sheet.makes), serving: plateServing(sheet.makes, sheet.rows.length) });
@@ -1038,8 +1078,15 @@ function renderCodeCard() {                                                     
   $("code-in2").oninput = () => { $("code-save2").disabled = !codeOk($("code-in2").value); };
   $("code-save2").onclick = () => { if (!codeOk($("code-in2").value)) return; codeSet($("code-in2").value); codeEditing = false; renderCodeCard(); };
 }
+function renderNutCard() {                                                                       /* one switch does both jobs: the row on Today and the tile on every sheet; up to two at once */
+  const st = nutState(), on = nutOn(), full = on.length >= NUT_MAX;
+  $("nut-count").innerHTML = `${on.length} of ${NUT_MAX}<span>on Today</span>`;
+  $("nut-rows").innerHTML = NUT.map(x => { const isOn = on.includes(x.key), t = nutTarget(x.key); return `<div class="row"><span>${x.name}</span>${isOn ? `<span class="rv tgt"><input class="num" type="number" inputmode="numeric" data-nk="${x.key}" value="${t || ""}" placeholder="target"><span>${x.unit} a day</span></span>` : ""}<button class="sw" role="switch" aria-checked="${isOn}" data-nsw="${x.key}" aria-label="${x.name}${isOn ? " on" : ""}" ${!isOn && full ? "disabled" : ""}></button></div>`; }).join("");
+  $("nut-rows").querySelectorAll("[data-nsw]").forEach(b => { b.onclick = () => { const k = b.dataset.nsw; st.on = st.on.filter(x => x !== k); if (!nutOn().includes(k) && b.getAttribute("aria-checked") !== "true" && nutOn().length < NUT_MAX) st.on.push(k); save(); renderNutCard(); }; });
+  $("nut-rows").querySelectorAll("[data-nk]").forEach(i => { i.onchange = ev => { const v = Math.max(0, Math.round(+ev.target.value || 0)); if (v) st.targets[i.dataset.nk] = v; else delete st.targets[i.dataset.nk]; save(); ev.target.value = v || ""; }; });
+}
 function renderSettings() {
-  renderCodeCard();
+  renderCodeCard(); renderNutCard();
   ["kcal", "p", "c", "f"].forEach(k => { $("t-" + k).value = S.targets[k]; });
   $("version").innerHTML = `${BUILD}<span>${BUILD_DATE}</span>`;
   $("net-sw").setAttribute("aria-checked", String(netOn()));
