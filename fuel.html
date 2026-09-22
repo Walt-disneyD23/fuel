@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921v · a fuel log, not a diet app.
+  Fuel · build 0921w · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -75,7 +75,7 @@ main[hidden] { display:none; }
 .m.flat .mrow { margin-bottom:0; } .m.flat { margin-bottom:10px; }
 .grid .cell.nut { grid-column:span 2; } .lines { margin-top:10px; } .ln { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-top:1px solid var(--line); font-size:14px; } .ln span:first-child { color:var(--ink2); } .ln span:last-child { font-family:var(--fd); font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .ate .msr.open svg { transform:rotate(180deg); }
-#nut-rows .row .tgt { margin-left:auto; margin-right:14px; } #nut-rows .row .tgt .num { width:70px; } #nut-rows .sw:disabled { opacity:.35; }
+#nut-rows .row .tgt { margin-left:auto; margin-right:14px; } #nut-rows .row .tgt .num { width:96px; } #nut-rows .sw:disabled { opacity:.35; }
 .pw { width:130px; text-align:right; background:var(--field); border:0; border-radius:10px; padding:8px 12px; font:600 16px var(--fb); color:var(--ink); }      /* 0921m: Each one is a · ____ */
 #nut-card .nhead { border-top:0; padding:0 0 16px; font-weight:700; font-size:17px; }      /* H2 (0921l): a card's heading, a rung under the spine's 22 px screen head */
 .fill { height:100%; border-radius:6px; background:var(--acc); transition:width .25s ease; }
@@ -331,7 +331,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
     <div class="row"><span>Net carbs</span><button class="sw" id="net-sw" role="switch" aria-checked="false"></button></div>
     <p class="fine" style="margin:14px 0 0">Carbs minus fiber. When this is on, tap the Carbs bar on Today to flip it to net carbs and back. An entry with no fiber number counts all its carbs, and the bar says how many there are. Fuel does not subtract sugar alcohols.</p>
   </section>
-  <section class="card" id="nut-card"><div class="row nhead"><span>Nutrients</span><span class="rv" id="nut-count"></span></div><div id="nut-rows"></div><p class="fine" style="margin:14px 0 0">A nutrient that is on gets a row on Today and a tile on every sheet, up to two at once. A target is yours to set; until then the row is a plain number. An entry with no number for it does not count, and the row says “at least” and how many. A label read keeps every line it printed, so a switch turned on later reads them back.</p></section>
+  <section class="card" id="nut-card"><div class="row nhead"><span>Nutrients</span><span class="rv" id="nut-count"></span></div><div id="nut-rows"></div><p class="fine" style="margin:14px 0 0">A nutrient that is on gets a row on Today and a tile on every sheet, up to two at once. A target is yours to set; until then the row is a plain number. DV is the label’s Daily Value, a bearing and never counted; for cholesterol and added sugars the label means it as a ceiling. An entry with no number for it does not count, and the row says “at least” and how many. A label read keeps every line it printed, so a switch turned on later reads them back.</p></section>
   <section class="card" id="code-card"><div id="code-body"></div><p class="fine" style="margin:14px 0 0">Snap needs the family’s own code once, on each phone. It lets this phone send label photos to the family’s reader; without it nothing is sent. The code lives on this phone only, never in the app’s file.</p></section>
   <section class="card">
     <div class="row"><span>Look</span><span class="seg" id="theme"><button data-t="light">Light</button><button data-t="auto">Auto</button><button data-t="dark">Dark</button></span></div>
@@ -356,7 +356,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921v", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921w", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -555,9 +555,10 @@ function ateLabel(at, openedAt, isEdit, timeSet, now) { const k = dayKey(at); if
 function lateNote(isEdit) { return "That's later than now." + (isEdit ? "" : " To add to another day, open it from Days."); }
 
 /* nutrients (0921k; ruled Sep 21 on fuel-nutrients-mock.html: A3, B1, L1; seven switches now, the whole label later). THE TABLE MATCHES ITS SOURCE: fuel-nutrients.json (harness-j). */
-const NUT = [{"key":"potassium","name":"Potassium","unit":"mg","line":"potassium"},{"key":"magnesium","name":"Magnesium","unit":"mg","line":"other"},{"key":"calcium","name":"Calcium","unit":"mg","line":"calcium"},{"key":"iron","name":"Iron","unit":"mg","line":"iron"},{"key":"vitamin_d","name":"Vitamin D","unit":"mcg","line":"vitamin_d"},{"key":"cholesterol","name":"Cholesterol","unit":"mg","line":"cholesterol"},{"key":"added_sugars","name":"Added sugars","unit":"g","line":"added_sugars"}];
+const NUT = [{"key":"potassium","name":"Potassium","unit":"mg","line":"potassium","dv":4700},{"key":"magnesium","name":"Magnesium","unit":"mg","line":"other","dv":420},{"key":"calcium","name":"Calcium","unit":"mg","line":"calcium","dv":1300},{"key":"iron","name":"Iron","unit":"mg","line":"iron","dv":18},{"key":"vitamin_d","name":"Vitamin D","unit":"mcg","line":"vitamin_d","dv":20},{"key":"cholesterol","name":"Cholesterol","unit":"mg","line":"cholesterol","dv":300},{"key":"added_sugars","name":"Added sugars","unit":"g","line":"added_sugars","dv":50}];
 const NUT_MAX = 2;
 function nutOf(key) { return NUT.find(x => x.key === key) || null; }
+function tgtHint(key) { const x = nutOf(key); return x && x.dv ? "DV " + x.dv : "target"; }      /* 0921w (D2): the empty box shows the label's Daily Value as a bearing, never counted; the word carries it */
 function nutNum(v) { return v === "" || v == null || isNaN(+v) ? null : +v; }
 function lineValue(lines, key) { const x = nutOf(key); if (!x || !Array.isArray(lines)) return null; const l = lines.find(l => l && (l.key === x.line && x.line !== "other" || String(l.name || "").trim().toLowerCase() === x.name.toLowerCase())); return l && typeof l.amount === "number" && isFinite(l.amount) ? l.amount : null; }      /* by the Worker's key, or by name when it filed the line under "other" */
 function nutFromLines(lines) { const o = {}; for (const x of NUT) { const v = lineValue(lines, x.key); if (v != null) o[x.key] = v; } return o; }
@@ -1105,7 +1106,7 @@ function renderCodeCard() {                                                     
 function renderNutCard() {                                                                       /* one switch does both jobs: the row on Today and the tile on every sheet; up to two at once */
   const st = nutState(), on = nutOn(), full = on.length >= NUT_MAX;
   $("nut-count").innerHTML = `${on.length} of ${NUT_MAX}<span>on Today</span>`;
-  $("nut-rows").innerHTML = NUT.map(x => { const isOn = on.includes(x.key), t = nutTarget(x.key); return `<div class="row"><span>${x.name}</span>${isOn ? `<span class="rv tgt"><input class="num" type="number" inputmode="numeric" data-nk="${x.key}" value="${t || ""}" placeholder="target"><span>${x.unit} a day</span></span>` : ""}<button class="sw" role="switch" aria-checked="${isOn}" data-nsw="${x.key}" aria-label="${x.name}${isOn ? " on" : ""}" ${!isOn && full ? "disabled" : ""}></button></div>`; }).join("");
+  $("nut-rows").innerHTML = NUT.map(x => { const isOn = on.includes(x.key), t = nutTarget(x.key); return `<div class="row"><span>${x.name}</span>${isOn ? `<span class="rv tgt"><input class="num" type="number" inputmode="numeric" data-nk="${x.key}" value="${t || ""}" placeholder="${tgtHint(x.key)}"><span>${x.unit} a day</span></span>` : ""}<button class="sw" role="switch" aria-checked="${isOn}" data-nsw="${x.key}" aria-label="${x.name}${isOn ? " on" : ""}" ${!isOn && full ? "disabled" : ""}></button></div>`; }).join("");
   $("nut-rows").querySelectorAll("[data-nsw]").forEach(b => { b.onclick = () => { const k = b.dataset.nsw; st.on = st.on.filter(x => x !== k); if (!nutOn().includes(k) && b.getAttribute("aria-checked") !== "true" && nutOn().length < NUT_MAX) st.on.push(k); save(); renderNutCard(); }; });
   $("nut-rows").querySelectorAll("[data-nk]").forEach(i => { i.onchange = ev => { const v = Math.max(0, Math.round(+ev.target.value || 0)); if (v) st.targets[i.dataset.nk] = v; else delete st.targets[i.dataset.nk]; save(); ev.target.value = v || ""; }; });
 }
