@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921w · a fuel log, not a diet app.
+  Fuel · build 0921x · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -175,6 +175,10 @@ main[hidden] { display:none; }
 .wr { display:inline-flex; align-items:center; gap:14px; } .wst { display:inline-flex; align-items:flex-end; gap:4px; height:24px; }
 .wst i { display:block; width:6px; border-radius:2px; background:var(--acc); } .wst i.b-p { opacity:.45; } .wst i.b-e { background:var(--ink2); opacity:.35; }
 .late { margin-top:8px; text-align:right; text-wrap:balance; }
+/* the wrap (0921x, B + D2) */
+.wdoor .pn { color:var(--acc); } .wdoor .wcv { transform:rotate(-90deg); }
+.wt { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 16px; } .wtile { background:var(--field); border-radius:14px; padding:14px 14px 12px; } .wn { font-family:var(--fd); font-size:26px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; } .wl { font-size:13px; color:var(--ink2); margin-top:2px; line-height:1.3; }
+.wsub { font-size:13px; color:var(--ink2); font-weight:500; margin:18px 0 6px; } .wf { display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--line); font-size:15px; } .wc { font-family:var(--fd); font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; } .wc span { font-family:var(--fb); font-size:12px; font-weight:600; color:var(--ink2); margin-left:3px; }
 .ate .tw { position:relative; display:inline-flex; } .ate .tw .setit { display:none; position:absolute; inset:0; align-items:center; justify-content:center; font:600 15px var(--fb); color:var(--ink2); pointer-events:none; white-space:nowrap; }
 .ate .tw.unset input { min-width:118px; min-height:38px; color:transparent; } .ate .tw.unset .setit { display:flex; }
 .ate input[type=text] { font:600 16px var(--fb); letter-spacing:0; }
@@ -297,6 +301,11 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
   <div class="head"><button class="back" id="days-back" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title">Days</span></div>
   <div id="days"></div>
 </main>
+<!-- ============ THE WRAP (0921x, D2): a finished week, its own screen ============ -->
+<main id="v-wrap" hidden>
+  <div class="head"><button class="back" id="wrap-back" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title" id="wrap-title">The week</span><span class="sub" id="wrap-sub"></span></div>
+  <div id="wrap"></div>
+</main>
 <!-- ============ ADD: the doors ============ -->
 <main id="v-add" hidden>
   <div class="head" id="add-head"><span class="title">Add</span></div>
@@ -356,7 +365,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921w", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0921x", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -570,12 +579,12 @@ function nutFmt(v, unit) { return (unit === "g" ? String(r1(v)) : fmt(v)) + " " 
 function dayNut(entries, key) { let v = 0, gaps = 0, part = 0; for (const e of entries) { let x = e.n ? nutNum(e.n[key]) : null; if (x == null && e.label) { const lv = lineValue(e.label.lines, key); if (lv != null) x = lv * (+e.servings || 1); } if (x == null) { gaps++; const p = e.np ? nutNum(e.np[key]) : null; if (p != null) { v += p; part++; } } else v += x; } return { v: r1(v), gaps, n: entries.length, part }; }      /* 0921u: part = how many of the gaps knew a part */      /* 0921p: a recipe's part-sum counts toward "at least" */      /* an entry without the number is a gap; a switch turned on later reads the label's own lines back */
 function nutVal(d, target, unit, past) { const t = +target || 0; if (d.n && d.gaps === d.n && !d.v) return past ? "no number" : "no number yet"; return (d.gaps ? "at least " : "") + nutFmt(d.v, unit) + (t ? " of " + nutFmt(t, unit) + (d.v > t ? ", " + (unit === "g" ? String(r1(d.v - t)) : fmt(d.v - t)) + " over" : "") : ""); }      /* "at least" is the mirror of net carbs' "up to"; over is a number */
 function nutWord(key) { const x = nutOf(key); return x ? x.name.charAt(0).toLowerCase() + x.name.slice(1) : key; }
-function nutGapLine(list) {      /* 0921u: THE PART IS NOT A HOLE — an entry that knows part of its potassium is counted, but no longer called an entry with no number */
+function nutGapLine(list, past) {      /* 0921x: past says had / knew, for a finished day and the wrap (TENSE FLIPS WHOLE) */      /* 0921u: THE PART IS NOT A HOLE — an entry that knows part of its potassium is counted, but no longer called an entry with no number */
   const holes = list.map(x => ({ key: x.key, n: x.gaps - (x.part || 0) })).filter(x => x.n > 0), parts = list.filter(x => (x.part || 0) > 0).map(x => ({ key: x.key, n: x.part }));
   if (!holes.length && !parts.length) return "";
-  const hc = holes.map((x, i) => (i ? (x.n === 1 ? "1 has" : x.n + " have") : (x.n === 1 ? "1 entry has" : x.n + " entries have")) + " no " + nutWord(x.key) + " number").join(", ");
+  const hc = holes.map((x, i) => (i ? (x.n === 1 ? "1 " : x.n + " ") : (x.n === 1 ? "1 entry " : x.n + " entries ")) + (past ? "had" : x.n === 1 ? "has" : "have") + " no " + nutWord(x.key) + " number").join(", ");
   const same = holes.length === 1 && parts.length === 1 && holes[0].key === parts[0].key;
-  const pc = parts.map((x, i) => { const one = x.n === 1, who = i || hc ? String(x.n) : (one ? "1 entry" : x.n + " entries"), verb = i ? "" : (one ? " knows only part" : " know only part"), of = same ? "" : " of " + (one ? "its " : "their ") + nutWord(x.key); return who + verb + of; }).join(", ");
+  const pc = parts.map((x, i) => { const one = x.n === 1, who = i || hc ? String(x.n) : (one ? "1 entry" : x.n + " entries"), verb = i ? "" : (past ? " knew only part" : one ? " knows only part" : " know only part"), of = same ? "" : " of " + (one ? "its " : "their ") + nutWord(x.key); return who + verb + of; }).join(", ");
   return (hc ? hc + (pc ? "; " + pc : "") : pc) + ".";
 }
 function plateNut(rows) { const t = {}, partial = [], part = {}; for (const x of NUT) { const known = rows.filter(r => r.per.n && nutNum(r.per.n[x.key]) != null); if (!known.length) continue; const sum = r1(known.reduce((a, r) => a + nutNum(r.per.n[x.key]) * r.amount, 0)); if (known.length < rows.length) { partial.push(x.key); part[x.key] = sum; continue; } t[x.key] = sum; } return { n: t, partial, part }; }      /* THE PARTIAL LAW: whole only when every ingredient knows it */
@@ -587,6 +596,32 @@ function labelRest(lines, on) { if (!Array.isArray(lines)) return []; const show
 function plateWord(word) { const w = String(word == null ? "" : word).trim().replace(/\s+/g, " ").toLowerCase(); return w && !/^servings?$/.test(w) ? oneWord(w) : "serving"; }
 function plateWords(t) { const s = String(t == null ? "" : t).trim(); let m = s.match(/^1 (?:of (\d+) )?(.+?), (\d+) ingredients?$/); if (m) return { makes: m[1] ? +m[1] : 1, word: plateWord(m[2]), count: +m[3] }; m = s.match(/^1 (?:serving|of (\d+) servings), a plate of (\d+)$/); return m ? { makes: m[1] ? +m[1] : 1, word: "serving", count: +m[2] } : null; }
 function plateFold(makes, word) { const w = plateWord(word); return makes > 1 ? makes + " " + manyWord(w) : "1 " + w; }      /* the folded row: The whole thing is … */
+/* the wrap (0921x; ruled Sep 22, 2026 on fuel-week-mock.html: P — the tile stays on protein; B — the numbers lead; D2 — its own screen behind a row on the open week).
+   A finished week in the read's past tense. Every number is arithmetic on what was logged; averages are per LOGGED day and say so; "reached" is the read's own test. */
+function wrapFoods(entries) {      /* true winners: foods logged more than once, most first, up to five rows; a tie is shown whole or not at all */
+  const c = {}; for (const e of entries) { const k = String(e.name || "").trim(); if (k) c[k] = (c[k] || 0) + 1; }
+  const all = Object.entries(c).filter(x => x[1] > 1).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const out = all.length > 5 && all[4][1] === all[5][1] ? all.filter(x => x[1] > all[5][1]) : all.slice(0, 5);      /* a tie across the fifth row is left out whole: what shows is complete for its count */
+  return out.map(x => ({ name: x[0], n: x[1] }));
+}
+function doneAt(entries, tg) { let run = 0; for (const e of entries.slice().sort((a, b) => new Date(a.t) - new Date(b.t))) { run += +e.p || 0; if (run >= tg.p) return new Date(e.t); } return null; }      /* doneBy's moment as a Date, so days compare by the clock */
+function wrapOf(days7, tg) {      /* days7: the seven days' entries, Monday → Sunday; null when the week has nothing */
+  let logged = 0, n = 0, kcal = 0, p = 0, reached = 0, at = null, day = null;
+  days7.forEach((es, i) => { if (!es.length) return; const t = totals(es); logged++; n += es.length; kcal += t.kcal; p += t.p; if (t.p >= tg.p) reached++;
+    const d = doneAt(es, tg); if (d) { const m = d.getHours() * 60 + d.getMinutes(); if (at == null || m < at) { at = m; day = i; } } });
+  if (!logged) return null;
+  return { logged, n, avgK: Math.round(kcal / logged), avgP: Math.round(p / logged), reached, earliest: day == null ? null : clock(doneAt(days7[day], tg)), earliestDay: day, foods: wrapFoods([].concat.apply([], days7)) };
+}
+function wrapLogged(w) { return (w ? w.logged : 0) + " of 7 days logged"; }
+function wrapTiles(w, tg) {      /* B: four numbers in the tally's face, each with its words under it */
+  return [[fmt(w.avgP) + " g", "protein a day"], [w.reached + " of " + w.logged, "days protein reached " + fmt(tg.p) + " g"], w.earliest ? [w.earliest, "earliest protein was done"] : ["–", "protein was not done any day"], [fmt(w.avgK), "kcal a day"]];
+}
+function wrapDoorLine(w, tg) { return "Protein averaged " + fmt(w.avgP) + " g a day, reached " + fmt(tg.p) + " g on " + w.reached + " of " + w.logged + "."; }      /* the one line under the door */
+function wrapNut(days7, key) {      /* the week's nutrient: the day sums, averaged over the logged days; gaps and parts counted across the week, so "at least" and the gap line carry over */
+  let v = 0, gaps = 0, part = 0, n = 0, logged = 0;
+  for (const es of days7) { if (!es.length) continue; const d = dayNut(es, key); logged++; v += d.v; gaps += d.gaps; part += d.part; n += d.n; }
+  return { v: logged ? Math.round(v / logged) : 0, gaps, part, n, logged };
+}
 /* @fuel:pure:end */
 
 /* ================= the starter pantry — USDA SR28 via fuel-pantry-seed.json; change both together ================= */
@@ -651,9 +686,9 @@ function applyTheme() { const dark = S.theme === "dark" || (S.theme === "auto" &
 mq.addEventListener("change", applyTheme);
 
 /* ================= views ================= */
-const VIEWS = ["home", "days", "add", "sheet", "settings"];
+const VIEWS = ["home", "days", "wrap", "add", "sheet", "settings"];
 let view = "home";
-function show(v) { view = v; if (v !== "settings") codeEditing = false; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v === "days" ? "home" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "days") renderDays(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
+function show(v) { view = v; if (v !== "settings") codeEditing = false; VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); const cur = v === "sheet" ? "add" : v === "days" || v === "wrap" ? "home" : v; ["home","add","settings"].forEach(x => { const b = $("nav-" + x); if (x === cur) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); window.scrollTo(0, 0); if (v === "home") renderHome(); if (v === "days") renderDays(); if (v === "wrap") renderWrap(); if (v === "add") renderAdd(); if (v === "settings") renderSettings(); }
 $("nav-home").onclick = () => { viewDay = null; addDay = null; show("home"); }; $("nav-add").onclick = () => { addDay = addTarget(view, viewDay, addDay, dayKey(new Date())); $("find").value = ""; show("add"); };      /* 0921t: a stale word never waits for you */ $("nav-settings").onclick = () => { viewDay = null; addDay = null; show("settings"); };
 let toastT; function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1800); }
 
@@ -666,7 +701,7 @@ function nutOn() { return nutState().on.filter(k => nutOf(k)).slice(0, NUT_MAX);
 function nutTarget(k) { return Math.max(0, Math.round(+nutState().targets[k] || 0)); }
 function nutRows(es, past) {                                                                      /* A3: rows without a track, then one gap line for all of them */
   const on = nutOn(); if (!on.length) return ""; const ds = on.map(k => Object.assign({ key: k }, dayNut(es, k)));
-  return ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${nutVal(d, nutTarget(d.key), nutOf(d.key).unit, past)}</span></div></div>`).join("") + (nutGapLine(ds) ? `<div class="netline">${esc(nutGapLine(ds))}</div>` : "");
+  return ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${nutVal(d, nutTarget(d.key), nutOf(d.key).unit, past)}</span></div></div>`).join("") + (nutGapLine(ds, past) ? `<div class="netline">${esc(nutGapLine(ds, past))}</div>` : "");
 }
 function carbBar(es, tot, tg) {                                                                     /* off: exactly the bar it always was. on: a flip, two faces, the face kept in S.carbFace */
   const t = tg.c, plain = (name, val, track, line) => `<div class="mrow"><span class="mname">${name}</span><span class="mval">${val}</span></div>${track}${line}`, one = `<div class="track"><div class="fill" style="width:${t ? Math.min(100, tot.c / t * 100) : 0}%"></div></div>`;
@@ -717,12 +752,27 @@ function renderDays() {
   const week = w => { const mon = weekStart(w[0]), t = weekTile([0, 1, 2, 3, 4, 5, 6].map(i => tot(dayShift(mon, i))), tg), open = !!daysOpen[mon];
     if (!t.logged) return `<div class="wkc"><button class="pi wk" disabled>${words(weekLabel(mon), t.words, "")}</button></div>`;
     const bars = t.bars ? `<span class="wst" aria-hidden="true">${t.bars.map(b => `<i class="${{ full: "b-f", part: "b-p", none: "b-e" }[b.k]}" style="height:${b.h}px"></i>`).join("")}</span>` : "";
-    return `<div class="wkc"><button class="pi wk fold${open ? " open" : ""}" data-w="${mon}" aria-expanded="${open}">${words(weekLabel(mon), t.words, `<span class="wr">${bars}<span class="cv">${CARET}</span></span>`)}</button>${open ? `<div class="wkd2">${rows(w, "dr")}</div>` : ""}</div>`; };
+    return `<div class="wkc"><button class="pi wk fold${open ? " open" : ""}" data-w="${mon}" aria-expanded="${open}">${words(weekLabel(mon), t.words, `<span class="wr">${bars}<span class="cv">${CARET}</span></span>`)}</button>${open ? `<div class="wkd2">${wrapDoor(mon)}${rows(w, "dr")}</div>` : ""}</div>`; };
   $("days").innerHTML = `<div class="sect">This week</div>` + rows(L.thisWeek, "pi") + (L.weeks.length ? `<div class="sect">Earlier</div>` + L.weeks.map(week).join("") : "") + (L.first ? `<div class="sect first">Your first entry was ${dayName(L.first)}.</div>` : "");
   $("days").querySelectorAll("[data-d]").forEach(b => b.onclick = () => { viewDay = b.dataset.d === tk ? null : b.dataset.d; show("home"); });
   $("days").querySelectorAll("[data-w]").forEach(b => b.onclick = () => { daysOpen[b.dataset.w] = !daysOpen[b.dataset.w]; renderDays(); });
   $("days").querySelectorAll("[data-run]").forEach(b => b.onclick = () => { daysOpen["r" + b.dataset.run] = true; renderDays(); });
+  $("days").querySelectorAll("[data-wrap]").forEach(b => b.onclick = () => { viewWeek = b.dataset.wrap; show("wrap"); });
 }
+/* the wrap (0921x): a finished week's own screen — B's face: four numbers, the nutrient rows in the past, the foods logged most */
+let viewWeek = null;      /* the Monday of the week on screen; memory only */
+const weekDays = mon => [0, 1, 2, 3, 4, 5, 6].map(i => dayEntries(dayShift(mon, i)));
+function wrapDoor(mon) { const w = wrapOf(weekDays(mon), S.targets); return w ? `<button class="dr wdoor" data-wrap="${mon}"><span><span class="pn">The week’s wrap</span><span class="ps" style="display:block">${esc(wrapDoorLine(w, S.targets))}</span></span><span class="cv wcv">${CARET}</span></button>` : ""; }
+function renderWrap() {
+  const mon = viewWeek, days7 = weekDays(mon), tg = S.targets, w = wrapOf(days7, tg);
+  $("wrap-title").textContent = weekLabel(mon); $("wrap-sub").textContent = wrapLogged(w);
+  if (!w) { $("wrap").innerHTML = `<section class="card"><div class="read" style="margin:0">Nothing was logged.</div></section>`; return; }
+  const ds = nutOn().map(k => Object.assign({ key: k }, wrapNut(days7, k)));
+  $("wrap").innerHTML = `<section class="card"><div class="wt">${wrapTiles(w, tg).map(t => `<div class="wtile"><div class="wn">${esc(t[0])}</div><div class="wl">${esc(t[1])}</div></div>`).join("")}</div>` +
+    ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${nutVal(d, nutTarget(d.key), nutOf(d.key).unit, true)}<span> a day</span></span></div></div>`).join("") + (nutGapLine(ds, true) ? `<div class="netline">${esc(nutGapLine(ds, true))}</div>` : "") +
+    (w.foods.length ? `<div class="wsub">Logged most</div>` + w.foods.map(f => `<div class="wf"><span>${esc(f.name)}</span><span class="wc">${f.n}<span> times</span></span></div>`).join("") : "") + `</section>`;
+}
+$("wrap-back").onclick = () => show("days");
 $("days-back").onclick = () => show("home");
 /* Storage: ask once for persistent mode (WebKit weighs whether this is a Home Screen web app). Guarded; Settings says what came back. */
 let kept = null;
