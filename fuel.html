@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0922a · a fuel log, not a diet app.
+  Fuel · build 0922b · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -365,7 +365,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0922a", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0922b", BUILD_DATE = "Sep 23, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -577,7 +577,7 @@ const NUT_MAX = 2;
 function nutOf(key) { return NUT.find(x => x.key === key) || null; }
 function tgtHint(key) { const x = nutOf(key); return x && x.dv ? "DV " + x.dv : "target"; }      /* 0921w (D2): the empty box shows the label's Daily Value as a bearing, never counted; the word carries it */
 function nutNum(v) { return v === "" || v == null || isNaN(+v) ? null : +v; }
-function lineValue(lines, key) { const x = nutOf(key); if (!x || !Array.isArray(lines)) return null; const l = lines.find(l => l && (l.key === x.line && x.line !== "other" || String(l.name || "").trim().toLowerCase() === x.name.toLowerCase())); return l && typeof l.amount === "number" && isFinite(l.amount) ? l.amount : null; }      /* by the Worker's key, or by name when it filed the line under "other" */
+function lineValue(lines, key) { const x = nutOf(key); if (!x || !Array.isArray(lines)) return null; const l = lines.find(l => l && (l.key === x.line && x.line !== "other" || String(l.name || "").trim().toLowerCase() === x.name.toLowerCase())); return l && typeof l.amount === "number" && isFinite(l.amount) && String(l.unit || "").trim().toLowerCase() === x.unit ? l.amount : null; }      /* by the Worker's key, or by name when it filed the line under "other"; 0922b: only in the nutrient's own unit — a %DV in the amount column (the sardine tin's "Potassium 4%") is not an amount */
 function nutFromLines(lines) { const o = {}; for (const x of NUT) { const v = lineValue(lines, x.key); if (v != null) o[x.key] = v; } return o; }
 function nutPer(per, div) { const o = {}, m = div || 1; for (const x of NUT) { const v = nutNum(per ? per[x.key] : null); if (v != null) o[x.key] = v / m; } return o; }      /* the sheet's flat numbers back into n{}: only the ones typed */
 function nutDiv(o, m) { const r = {}; for (const k in (o || {})) r[k] = o[k] / m; return r; }
