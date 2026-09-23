@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0922d · a fuel log, not a diet app.
+  Fuel · build 0922e · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -369,7 +369,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0922d", BUILD_DATE = "Sep 23, 2026";
+const BUILD = "0922e", BUILD_DATE = "Sep 23, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -380,6 +380,7 @@ function fmt(n) { return Math.round(n).toLocaleString("en-US"); }
 function r1(n) { return Math.round(n * 10) / 10; }
 function totals(entries) { const t = { kcal:0, p:0, c:0, f:0, n:entries.length }; for (const e of entries) { t.kcal += +e.kcal||0; t.p += +e.p||0; t.c += +e.c||0; t.f += +e.f||0; } return t; }
 function kcalFromGrams(p, c, f) { return Math.round((+p||0)*4 + (+c||0)*4 + (+f||0)*9); }
+function minsBetween(a, b) { return Math.floor(new Date(b).getTime() / 60000) - Math.floor(new Date(a).getTime() / 60000); }      /* 0922e: THE CLOCKS AGREE — whole minutes, each stamp cut at its minute as the clock words are; never rounded from the seconds */
 function gapText(min) { if (min < 60) return ""; const h = Math.floor(min/60), m = min % 60; return h + " h" + (m ? " " + m + " m" : "") + " between"; }
 function sinceText(min) { const h = Math.floor(min/60), m = min % 60; return (h ? h + " h " : "") + m + " m since the last entry"; }
 /* THE READ IS ARITHMETIC: entries, targets and the clock in; one sentence out. Never inferred. */
@@ -753,11 +754,11 @@ function renderHome() {
   if (!es.length) { $("spine").innerHTML = past ? `<div class="empty">Nothing was logged.</div>` : `<div class="empty">Nothing yet. The day starts with the first entry.</div>`; return; }
   let html = `<div class="rail"></div>`;
   es.forEach((e, i) => {
-    if (i) { const gm = Math.round((new Date(e.t) - new Date(es[i-1].t)) / 60000); const px = Math.max(10, Math.min(72, gm / 60 * 18)); html += `<div class="gap" style="height:${px}px">${gapText(gm)}</div>`; }
+    if (i) { const gm = minsBetween(es[i-1].t, e.t); const px = Math.max(10, Math.min(72, gm / 60 * 18)); html += `<div class="gap" style="height:${px}px">${gapText(gm)}</div>`; }
     const kc = kcalFromGrams(e.p, e.c, e.f) || 1;
     html += `<button class="e" data-id="${e.id}"><div><div class="r1"><span class="when tn">${clock(e.t)}<span>${SRC[e.src] || "entered"}${e.est ? ", calories estimated" : ""}</span></span><span class="k">${fmt(e.kcal)}<span>kcal</span></span></div><div class="ename">${esc(e.name || "Untitled")}</div></div><div><div class="bar"><i class="p" style="width:${(e.p||0)*4/kc*100}%"></i><i class="c" style="width:${(e.c||0)*4/kc*100}%"></i><i class="f" style="width:${(e.f||0)*9/kc*100}%"></i></div><div class="g"><span>Protein <b>${fmt(e.p)} g</b></span><span>Carbs <b>${fmt(e.c)} g</b></span><span>Fat <b>${fmt(e.f)} g</b></span></div></div></button>`;
   });
-  const since = Math.max(0, Math.round((now - new Date(es[es.length-1].t)) / 60000));
+  const since = Math.max(0, minsBetween(es[es.length-1].t, now));
   if (!past) html += `<div class="nowrow">Now ${clock(now)}<span>${sinceText(since)}</span></div>`;
   $("spine").innerHTML = html;
   $("spine").querySelectorAll(".e").forEach(b => b.onclick = () => openSheet({ mode: "edit", entry: S.entries.find(e => e.id === b.dataset.id) }));
@@ -963,7 +964,7 @@ function sheetBack() {
   if (plate) plate.adding = false;      /* 0921z */
   if (sheet && (sheet.mode === "manage" || sheet.mode === "follow")) return manageBack();
   if (sheet && sheet.mode === "snap") { snapCancel(); return show("add"); }
-  if (sheet && sheet.mode === "edit") return show("home");
+  if (sheet && sheet.mode === "edit") { if (editDirty() && !confirm("Leave without saving the changes?")) return; return show("home"); }      /* 0922e: the same question the pantry's Edit asks */
   if (sheet && sheet.mode === "plate" && plate) { plate.makes = sheet.makes; plate.name = sheet.name; plate.word = sheet.word; }
   const y = sheet && sheet.mode === "ing" && plate ? plate.scrollY : 0;
   show("add"); if (y) window.scrollTo(0, y);
@@ -1001,6 +1002,7 @@ function openSheet(o) {
   $("sheet-title").textContent = o.mode === "pantry" && sheet.src === "usda" && !S.pantry.some(p => p.id === o.item.id) ? "Starter pantry" : { typed: "Type it", pantry: "From the pantry", again: "Again", edit: "Edit", plate: "Build a recipe", label: "Snap a label" }[o.mode];
   $("sheet-sub").textContent = o.mode === "typed" ? "entered" : o.mode === "plate" ? plateHead(plate.rows) : (SRC[sheet.src] || "entered");
   const can = o.mode === "pantry" && S.pantry.some(p => p.id === o.item.id); $("sheet-chg").hidden = !can; $("sheet-sub").hidden = can; $("sheet-chg").onclick = () => openManage(S.pantry.find(p => p.id === o.item.id));
+  if (o.mode === "edit") sheet.pristine = editSnap();
   show("sheet"); renderSheet();
 }
 function sheetTotals() {
@@ -1052,10 +1054,10 @@ function renderSheet() {
     (whole && !sheet.forPlate ? `<div class="row" style="margin-top:16px"><span id="keep-lbl">Keep in the pantry${sheet.name.trim() ? "" : " (name it first)"}</span><button class="sw" id="keep" role="switch" aria-checked="${sheet.keep && !!sheet.name.trim()}" ${sheet.name.trim() ? "" : "disabled"}></button></div>` : "") +
     (sheet.forPlate ? "" : `<div class="ate"><span>Ate at</span><span class="t"><span class="tw${sheet.timeSet ? "" : " unset"}"><input type="time" id="sh-time" value="${sheet.timeSet ? hh + ":" + mm : ""}"><span class="setit">set a time</span></span>${ateWords ? `<span class="now">${esc(ateWords)}</span>` : ""}</span></div>`) +
     (sheet.late ? `<div class="fine late" id="late-note">${esc(lateNote(sheet.mode === "edit"))}</div>` : "") +
-    (sheet.forPlate ? "" : `<button class="log" id="sh-log" ${canLog && sheet.timeSet ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>`) +
+    (sheet.forPlate ? "" : `<button class="log" id="sh-log" ${canLog && sheet.timeSet && !(sheet.mode === "edit" && !editDirty()) ? "" : "disabled"}>${sheet.mode === "edit" ? "Save" : "Log it"}</button>`) +
     (whole ? `<button class="log${sheet.forPlate ? "" : " soft"}" id="sh-keep" ${canLog ? "" : "disabled"} ${sheet.name.trim() ? "" : "hidden"}>${sheet.forPlate ? "Add to the recipe" : "Add to your pantry only"}</button>` : "") +
     (sheet.mode === "edit" ? `<button class="quiet" id="sh-del">Delete this entry</button>` : "");
-  { const nm = $("sh-name"); if (nm) nm.oninput = ev => { sheet.name = ev.target.value; const ko = $("sh-keep"); if (ko) ko.hidden = !sheet.name.trim(); const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } const kl = $("keep-lbl"); if (kl) kl.textContent = "Keep in the pantry" + (sheet.name.trim() ? "" : " (name it first)"); }; }
+  { const nm = $("sh-name"); if (nm) nm.oninput = ev => { sheet.name = ev.target.value; const ko = $("sh-keep"); if (ko) ko.hidden = !sheet.name.trim(); const k = $("keep"); if (k) { k.disabled = !sheet.name.trim(); k.setAttribute("aria-checked", sheet.keep && !!sheet.name.trim()); } const kl = $("keep-lbl"); if (kl) kl.textContent = "Keep in the pantry" + (sheet.name.trim() ? "" : " (name it first)"); if (sheet.mode === "edit") refreshTotals(); }; }
   $("sheet").querySelectorAll("input[data-k]").forEach(inp => { inp.disabled = !editable; inp.oninput = () => { ltDrop(inp); sheet.per[inp.dataset.k] = inp.value; refreshTotals(); }; });
   $("sv-dn").onclick = () => { sheet.servings = Math.max(0.5, sheet.servings - 0.5); renderSheet(); };
   $("sv-up").onclick = () => { sheet.servings = Math.min(20, sheet.servings + 0.5); renderSheet(); };
@@ -1080,7 +1082,7 @@ function refreshAte() {                                  /* 0919c: patches the A
   let ln = $("late-note"); if (sheet.late) { if (!ln) { ln = document.createElement("div"); ln.className = "fine late"; ln.id = "late-note"; seat.parentNode.after(ln); } ln.textContent = lateNote(sheet.mode === "edit"); } else if (ln) ln.remove();
   refreshTotals();
 }
-function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), "per " + perWords(sheet.mode === "typed" || sheet.mode === "label" ? "" : sheet.servingText), sheet.mode === "typed" || sheet.mode === "label", noFiberLine(), st.basis.lt); wireZero(); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0) || sheet.timeSet === false; }
+function refreshTotals() { const st = sheetTotals(), tot = st.tot; const kc = $("sheet").querySelector('input[data-k="kcal"]'); if (kc) { kc.placeholder = kcalFromGrams(sheet.per.p, sheet.per.c, sheet.per.f) || ""; kc.closest(".cell").classList.toggle("est", st.est); } const en = $("est-note"); if (en) en.hidden = !st.est; const nn = $("net-note"); if (nn) nn.innerHTML = netNote(st.basis.c, st.basis.x.fiber, sheet.mode !== "plate" && !!(sheet.item && sheet.item.plate) && platePartial(sheet.item.plate).includes("fiber"), "per " + perWords(sheet.mode === "typed" || sheet.mode === "label" ? "" : sheet.servingText), sheet.mode === "typed" || sheet.mode === "label", noFiberLine(), st.basis.lt); wireZero(); const h = $("sheet").querySelector(".herot"); if (h) h.innerHTML = `<div class="big tn">${fmt(tot.kcal)}<span>kcal</span></div><div class="macros">Protein <b>${fmt(tot.p)} g</b><br>Carbs <b>${fmt(tot.c)} g</b><br>${netHero(tot)}Fat <b>${fmt(tot.f)} g</b></div>`; const l2 = $("sh-keep"); if (l2) l2.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0); const l = $("sh-log"); if (l) l.disabled = !((+sheet.per.p || +sheet.per.c || +sheet.per.f || +sheet.per.kcal) > 0) || sheet.timeSet === false || (sheet.mode === "edit" && !editDirty()); }
 function commitSheet(keepOnly) {
   const t = sheetTotals(), name = sheet.name.trim();
   if (sheet.mode === "edit") {
@@ -1125,6 +1127,8 @@ function manageItem() {
   if (it.src === "usda") return it;
   return Object.assign({}, it, { name, serving: measNow(sheet.meas) || (measureOf(it.serving).unit ? "serving" : it.serving || "serving"), per: managePer() });
 }
+function editSnap() { const t = sheetTotals(); return JSON.stringify([sheet.name.trim(), sheet.at.toISOString(), sheet.servings, t.tot, t.est]); }      /* 0922e (A): what Save would write on an entry's Edit, taken when the sheet opens */
+function editDirty() { return sheet.mode === "edit" && sheet.pristine != null && editSnap() !== sheet.pristine; }
 function manageDirty() { return JSON.stringify(manageItem()) !== sheet.pristine; }      /* 0921v: a record shaped by an older build is not a change */
 function manageOk() { const p = sheet.per; return !!sheet.name.trim() && (sheet.item.plate ? sheet.rows.length > 0 : (+p.p || +p.c || +p.f || +p.kcal) > 0); }
 function renderManage() {
