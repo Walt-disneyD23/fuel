@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0921z · a fuel log, not a diet app.
+  Fuel · build 0922a · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -165,7 +165,7 @@ main[hidden] { display:none; }
 .dpill { display:inline-flex; align-items:center; gap:6px; border:0; background:var(--field); border-radius:10px; padding:8px 12px; font:600 15px var(--fb); color:var(--ink); }
 .dpill svg, .cv { color:var(--ink2); }
 .sect.first { text-align:center; margin:22px 4px 6px; }
-.cv { display:inline-flex; transition:transform .15s; } .pi.wk.open .cv { transform:rotate(180deg); }
+.cv { display:inline-flex; transition:transform .15s; } .pi.wk.open .cv, .pi.fold.open .cv { transform:rotate(180deg); }
 .pi.wk[disabled] { opacity:1; cursor:default; }
 .wkc { background:var(--card); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; } .wkc + .wkc { margin-top:8px; }
 .wkc .pi { background:transparent; box-shadow:none; border-radius:0; }
@@ -365,7 +365,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0921z", BUILD_DATE = "Sep 22, 2026";
+const BUILD = "0922a", BUILD_DATE = "Sep 22, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -398,15 +398,23 @@ function readLine(tot, tg, now) {
 }
 function toGoLine(tot, tg) { const d = tg.kcal - tot.kcal; return d >= 0 ? { lead: fmt(d) + " to go", tail: "of " + fmt(tg.kcal) } : { lead: fmt(-d) + " over", tail: fmt(tg.kcal) }; }
 function macroVal(v, t) { return fmt(v) + " g of " + fmt(t) + " g" + (v > t ? ", " + fmt(v - t) + " over" : ""); }
-/* Repeat: nearest by hour of day — an item used around this time of day floats up; never used sorts by when it was added. */
-function repeatOrder(pantry, now) {
-  const x = new Date(now), nowMin = x.getHours()*60 + x.getMinutes();
-  const dist = t => { const d = new Date(t), m = d.getHours()*60 + d.getMinutes(), a = Math.abs(m - nowMin); return Math.min(a, 1440 - a); };
-  return pantry.slice().sort((a, b) => {
-    const da = a.used && a.used.length ? Math.min(...a.used.map(dist)) : 1e9, db = b.used && b.used.length ? Math.min(...b.used.map(dist)) : 1e9;
-    if (da !== db) return da - db; return (b.added||0) - (a.added||0);
-  });
+/* THE PANTRY IS TWO THINGS (0922a; ruled Sep 22 on the owner's Save-a-copy: A + R1, C, B). The clock reads the ENTRIES that exist, never the tap log (`used`): a deleted entry is not a use. */
+const AROUND_MIN = 120;                                                            /* B: "Around this time" is a past entry within two hours of now, on any day */
+const ING_RULE = "In your recipes, never logged on their own.";                   /* R1: the rule, in the fold's own words */
+const REST_SUB = "Your foods and recipes, in clock order.";                       /* C: under the picker's fold */
+function loggedAt(entries, id) { return (entries || []).filter(e => e.pantryId === id).map(e => e.t); }
+function inRecipes(pantry, id) { return pantry.filter(q => q.plate && q.plate.some(r => r.itemId === id)); }
+function isIngredient(pantry, entries, p) { return !loggedAt(entries, p.id).length && inRecipes(pantry, p.id).length > 0; }
+function pantrySplit(pantry, entries) { const foods = [], ings = []; pantry.forEach(p => (isIngredient(pantry, entries, p) ? ings : foods).push(p)); return { foods, ings }; }
+function hourDist(t, now) { const x = new Date(now), nowMin = x.getHours()*60 + x.getMinutes(), d = new Date(t), m = d.getHours()*60 + d.getMinutes(), a = Math.abs(m - nowMin); return Math.min(a, 1440 - a); }
+function nearestUse(p, now, entries) { const ts = loggedAt(entries, p.id); return ts.length ? Math.min(...ts.map(t => hourDist(t, now))) : 1e9; }
+/* Repeat: nearest ENTRY by hour of day — an item logged around this time of day floats up; never logged sorts by when it was added. */
+function repeatOrder(pantry, now, entries) {
+  return pantry.slice().sort((a, b) => { const da = nearestUse(a, now, entries), db = nearestUse(b, now, entries); if (da !== db) return da - db; return (b.added||0) - (a.added||0); });
 }
+function aroundSplit(ordered, now, entries) { const around = ordered.filter(p => nearestUse(p, now, entries) <= AROUND_MIN); return { around, rest: ordered.filter(p => !around.includes(p)) }; }
+function ingFoldWords(n) { return n + (n === 1 ? " ingredient" : " ingredients"); }
+function restFoldWords(n) { return n + " more in your pantry"; }
 function scale(per, servings) { return { kcal: Math.round((+per.kcal||0) * servings), p: r1((+per.p||0) * servings), c: r1((+per.c||0) * servings), f: r1((+per.f||0) * servings) }; }
 function stepText(n) { const w = Math.floor(n), h = n - w >= 0.5; return (w ? w : "") + (h ? "½" : "") || "0"; }
 /* THE PLATE IS ARITHMETIC: rows in, sums out. Amounts are written in the food's own measure; a row is the plate's own copy. */
@@ -658,6 +666,7 @@ const SRC = { pantry: "from the pantry", label: "read from the label", typed: "e
 const PLT = '<svg class="plt" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
 function mark(p) { return p.plate || p.src === "plate" ? PLT : ""; }
 const CARET = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';
+function foldRow(id, words, sub, open) { return `<button class="pi fold${open ? " open" : ""}" id="${id}" aria-expanded="${open}"><span><span class="pn">${esc(words)}</span><span class="ps" style="display:block">${esc(sub)}</span></span><span class="cv">${CARET}</span></button>`; }      /* 0922a: the fold on Add and in the picker; open/closed lives in memory only, like daysOpen */
 function measNow(m) { return m && m.unit ? measureText(m.n, m.unit === "other" ? m.word : m.unit) : ""; }
 function measUnit(m) { return m.unit ? (snapThird(+m.n) > 1 ? manyWord(m.unit) : m.unit) : "serving"; }
 function measHtml(m) {
@@ -784,15 +793,19 @@ try { if (navigator.storage && navigator.storage.persist && navigator.storage.pe
 function renderAdd() {
   renderAddHead();
   const now = new Date(), yk = dayKey(new Date(now - 86400000));
-  const pantry = repeatOrder(S.pantry, now);
+  const split = pantrySplit(S.pantry, S.entries), ordered = repeatOrder(split.foods, now, S.entries), { around, rest } = aroundSplit(ordered, now, S.entries), ings = repeatOrder(split.ings, now, S.entries);      /* 0922a: THE PANTRY IS TWO THINGS (A + R1, B) */
   const yest = S.entries.filter(e => dayKey(e.t) === yk).sort((a, b) => new Date(a.t) - new Date(b.t));
   let html = "";
-  if (!pantry.length && !yest.length) html = `<p class="fine" style="margin:0 4px">Nothing in your pantry yet. Name what you type and it lands here; yesterday's entries show here too.</p>`;
-  pantry.forEach(p => { html += `<button class="pi" data-p="${p.id}"><span><span class="pn">${mark(p)}${esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`; });
+  if (!S.pantry.length && !yest.length) html = `<p class="fine" style="margin:0 4px">Nothing in your pantry yet. Name what you type and it lands here; yesterday's entries show here too.</p>`;
+  const card = p => `<button class="pi" data-p="${p.id}"><span><span class="pn">${mark(p)}${esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span></button>`;
+  $("repeat-head").textContent = around.length ? "Around this time" : "Your pantry";      /* B: the heading says the rule only when it has something to say */
+  html += around.map(card).join("") + (around.length && rest.length ? `<div class="sect">The rest of your pantry</div>` : "") + rest.map(card).join("");
+  if (ings.length) html += foldRow("ing-fold", ingFoldWords(ings.length), ING_RULE, ingOpen) + (ingOpen ? ings.map(card).join("") : "");      /* A + R1: the fold at the end of Your pantry, before Yesterday */
   if (yest.length) { html += `<div class="sect">Yesterday</div>`; yest.forEach(e => { html += `<button class="pi" data-y="${e.id}"><span><span class="pn">${esc(e.name || "Untitled")}</span><span class="ps" style="display:block">${clock(e.t)} yesterday, ${SRC[e.src] || "entered"}</span></span><span class="pk tn">${fmt(e.kcal)}<span>kcal</span></span></button>`; }); }
   $("repeat").innerHTML = html;
   $("repeat").querySelectorAll("[data-p]").forEach(b => b.onclick = () => openSheet({ mode: "pantry", item: S.pantry.find(p => p.id === b.dataset.p) }));
   $("repeat").querySelectorAll("[data-y]").forEach(b => b.onclick = () => openSheet({ mode: "again", entry: S.entries.find(e => e.id === b.dataset.y) }));
+  { const f = $("ing-fold"); if (f) f.onclick = () => { ingOpen = !ingOpen; renderAdd(); }; }
   renderFind();
 }
 function markHit(name, q) { const i = name.toLowerCase().indexOf(q); return i < 0 ? esc(name) : esc(name.slice(0, i)) + "<b>" + esc(name.slice(i, i + q.length)) + "</b>" + esc(name.slice(i + q.length)); }
@@ -860,6 +873,7 @@ $("sheet-back").onclick = () => sheetBack();
 
 /* ================= build a plate (ruled B: stay in the picker) ================= */
 let plate = null;                                   // { rows, makes, name, scrollY }; lives until the plate is logged or left
+let ingOpen = false, pickOpen = false;              // 0922a: the ingredients fold on Add, the rest-of-the-pantry fold in the picker; a reload folds both again
 function findItem(id) { return S.pantry.find(p => p.id === id) || STARTER.find(p => p.id === id); }
 function subLine(p) { return p.plate ? esc(p.serving || "serving") : "per " + esc(p.serving || "serving") + ", " + (SRC[p.src] || "entered"); }
 function rowSub(r) { return amountText(r.unit, r.amount) + ", " + fmt(scale(r.per, r.amount).kcal) + " kcal"; }
@@ -881,10 +895,12 @@ function renderPicker() {
   const q = ($("find").value || "").trim().toLowerCase(), R = $("results");
   $("add-body").hidden = true; R.hidden = false;
   const shut = new Set(plate.editing ? plate.editing.exclude : []), inIds = new Set(plate.rows.map(r => r.itemId)), hit = p => !shut.has(p.id) && !inIds.has(p.id) && (!q || p.name.toLowerCase().includes(q));
-  const mine = (q ? S.pantry : repeatOrder(S.pantry, new Date())).filter(hit), have = new Set(S.pantry.map(p => p.id)), starter = q ? STARTER.filter(p => !have.has(p.id) && hit(p)) : [];
+  const now = new Date(), split = q ? null : pantrySplit(S.pantry, S.entries), lead = q ? [] : repeatOrder(split.ings, now, S.entries).filter(hit), more = q ? [] : repeatOrder(split.foods, now, S.entries).filter(hit);      /* 0922a (C): the picker leads with the ingredients, the rest folded */
+  const mine = q ? S.pantry.filter(hit) : lead.concat(more), have = new Set(S.pantry.map(p => p.id)), starter = q ? STARTER.filter(p => !have.has(p.id) && hit(p)) : [];
   const card = p => `<button class="pi pick" data-add="${p.id}"><span><span class="pn">${mark(p)}${q ? markHit(p.name, q) : esc(p.name)}</span><span class="ps" style="display:block">${subLine(p)}</span></span><span class="pk tn">${fmt(p.per.kcal)}<span>kcal</span></span><span class="plus" aria-hidden="true">+</span></button>`;
   let html = !q && !plate.rows.length ? `<p class="fine" id="plate-guide" style="margin:0 4px 8px">Find each ingredient by name and tap +. Fuel adds the recipe up.</p>` : "";      /* S4: the door lost its sentence; it sits here while the plate is empty */
-  if (mine.length) html += `<div class="sect">Your pantry</div>` + mine.map(card).join("");
+  if (!q && lead.length) html += `<div class="sect">Ingredients</div><p class="fine" style="margin:-2px 4px 10px">${esc(ING_RULE)}</p>` + lead.map(card).join("") + (more.length ? foldRow("pk-fold", restFoldWords(more.length), REST_SUB, pickOpen) + (pickOpen ? more.map(card).join("") : "") : "");
+  else if (mine.length) html += `<div class="sect">Your pantry</div>` + mine.map(card).join("");
   if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(card).join("");
   { const miss = !mine.length && !starter.length && q && !alreadyIn(q) && !loopNote(q, shut), w = !mine.length && !starter.length ? (q ? (alreadyIn(q) || loopNote(q, shut) || pickerMissWords($("find").value)) : (plate.rows.length ? "Find the next ingredient, or you're done." : "")) : ""; if (w) html += `<p class="fine" style="margin:14px 4px 0">${miss ? esc(w) : w}</p>`;
     if (miss) html += `<div class="hfs"><button class="door hf" id="pk-snap"><span class="dt">Snap its label</span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="door hf" id="pk-type"><span class="dt">Type it</span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>`; }      /* 0921z (B2): the way in from the picker */
@@ -893,6 +909,7 @@ function renderPicker() {
   R.innerHTML = html;
   R.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { plate.rows.unshift(plateRow(findItem(b.dataset.add), 1)); $("find").value = ""; renderAddHead(); renderPicker(); });
   R.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openIng(+b.dataset.open));
+  { const f = $("pk-fold"); if (f) f.onclick = () => { pickOpen = !pickOpen; renderPicker(); }; }
   { const pt = $("pk-type"), ps = $("pk-snap"); if (pt) pt.onclick = () => { plate.adding = true; openSheet({ mode: "typed", name: $("find").value.trim() }); }; if (ps) ps.onclick = () => { if (!codeOk(codeGet())) return openCode(); plate.adding = true; snap = null; $("snap-file").click(); }; }      /* 0921z: a sheet opened from here is for the recipe */
   const nudge = (i, dir) => { const r = plate.rows[i]; r.amount = plateStep(r.amount, dir); $("rs-" + i).textContent = rowSub(r); $("plate-sub").textContent = plateHead(plate.rows); R.querySelector(`[data-dn="${i}"]`).disabled = r.amount <= 0.5; };   // in place: nothing redraws under the finger
   R.querySelectorAll("[data-dn]").forEach(b => b.onclick = () => nudge(+b.dataset.dn, -1));
