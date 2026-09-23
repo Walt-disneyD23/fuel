@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0922c · a fuel log, not a diet app.
+  Fuel · build 0922d · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -165,6 +165,10 @@ main[hidden] { display:none; }
 .dpill { display:inline-flex; align-items:center; gap:6px; border:0; background:var(--field); border-radius:10px; padding:8px 12px; font:600 15px var(--fb); color:var(--ink); }
 .dpill svg, .cv { color:var(--ink2); }
 .sect.first { text-align:center; margin:22px 4px 6px; }
+.sect.rc { margin-top:6px; }                                             /* 0922d (A): the recipe sits under the search bar */
+.rband { box-shadow:0 0 0 1.5px var(--acc2); border-radius:20px; padding:6px; margin:0 -6px; }      /* one band around all the rows, the marked tile's own line */
+.rband + .log { margin-top:14px; margin-bottom:6px; }
+#rc-fold > span:first-child { min-width:0; } #rc-fold .ps { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }      /* X: the names, cut to one line */
 .cv { display:inline-flex; transition:transform .15s; } .pi.wk.open .cv, .pi.fold.open .cv { transform:rotate(180deg); }
 .pi.wk[disabled] { opacity:1; cursor:default; }
 .wkc { background:var(--card); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; } .wkc + .wkc { margin-top:8px; }
@@ -365,7 +369,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0922c", BUILD_DATE = "Sep 23, 2026";
+const BUILD = "0922d", BUILD_DATE = "Sep 23, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -415,6 +419,8 @@ function repeatOrder(pantry, now, entries) {
 function aroundSplit(ordered, now, entries) { const around = ordered.filter(p => nearestUse(p, now, entries) <= AROUND_MIN); return { around, rest: ordered.filter(p => !around.includes(p)) }; }
 function ingFoldWords(n) { return n + (n === 1 ? " ingredient" : " ingredients"); }
 function restFoldWords(n) { return n + " more in your pantry"; }
+function rcFoldWords(n) { return n + " in the recipe"; }                 /* 0922d (X): the recipe folded while you type: the count, then the names in order */
+function rcFoldSub(rows) { return rows.map(r => r.name).join(", "); }
 function scale(per, servings) { return { kcal: Math.round((+per.kcal||0) * servings), p: r1((+per.p||0) * servings), c: r1((+per.c||0) * servings), f: r1((+per.f||0) * servings) }; }
 function stepText(n) { const w = Math.floor(n), h = n - w >= 0.5; return (w ? w : "") + (h ? "½" : "") || "0"; }
 /* THE PLATE IS ARITHMETIC: rows in, sums out. Amounts are written in the food's own measure; a row is the plate's own copy. */
@@ -881,7 +887,7 @@ $("sheet-back").onclick = () => sheetBack();
 
 /* ================= build a plate (ruled B: stay in the picker) ================= */
 let plate = null;                                   // { rows, makes, name, scrollY }; lives until the plate is logged or left
-let ingOpen = false, pickOpen = false;              // 0922a: the ingredients fold on Add, the rest-of-the-pantry fold in the picker; a reload folds both again
+let ingOpen = false, pickOpen = false, rcOpen = false;              // 0922a: the ingredients fold on Add, the rest-of-the-pantry fold in the picker; a reload folds both again
 function findItem(id) { return S.pantry.find(p => p.id === id) || STARTER.find(p => p.id === id); }
 function subLine(p) { return p.plate ? esc(p.serving || "serving") : "per " + esc(p.serving || "serving") + ", " + (SRC[p.src] || "entered"); }
 function rowSub(r) { return amountText(r.unit, r.amount) + ", " + fmt(scale(r.per, r.amount).kcal) + " kcal"; }
@@ -912,17 +918,18 @@ function renderPicker() {
   if (starter.length) html += `<div class="sect">Starter pantry</div>` + starter.slice(0, 12).map(card).join("");
   { const miss = !mine.length && !starter.length && q && !alreadyIn(q) && !loopNote(q, shut), w = !mine.length && !starter.length ? (q ? (alreadyIn(q) || loopNote(q, shut) || pickerMissWords($("find").value)) : (plate.rows.length ? "Find the next ingredient, or you're done." : "")) : ""; if (w) html += `<p class="fine" style="margin:14px 4px 0">${miss ? esc(w) : w}</p>`;
     if (miss) html += `<div class="hfs"><button class="door hf" id="pk-snap"><span class="dt">Snap its label</span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="door hf" id="pk-type"><span class="dt">Type it</span><span class="chev"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>`; }      /* 0921z (B2): the way in from the picker */
-  if (plate.rows.length) html += `<div class="sect">In the recipe</div>` + plate.rows.map((r, i) => `<div class="pi on"><button class="pt" data-open="${i}"><span class="pn" style="display:block">${mark(r)}${esc(r.name)}</span><span class="ps" style="display:block" id="rs-${i}">${rowSub(r)}</span></button><span class="amt"><button class="plus mn" data-dn="${i}" aria-label="Less" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><button class="plus" data-up="${i}" aria-label="More">+</button></span></div>`).join("");
-  html += `<button class="log" id="plate-done" style="margin-top:18px" ${plate.rows.length ? "" : "disabled"}>${plate.rows.length ? "Done, " + plate.rows.length + " in" : "Done"}</button>`;
-  R.innerHTML = html;
-  R.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { plate.rows.unshift(plateRow(findItem(b.dataset.add), 1)); $("find").value = ""; renderAddHead(); renderPicker(); });
+  const rows = `<div class="rband">` + plate.rows.map((r, i) => `<div class="pi on"><button class="pt" data-open="${i}"><span class="pn" style="display:block">${mark(r)}${esc(r.name)}</span><span class="ps" style="display:block" id="rs-${i}">${rowSub(r)}</span></button><span class="amt"><button class="plus mn" data-dn="${i}" aria-label="Less" ${r.amount <= 0.5 ? "disabled" : ""}>−</button><button class="plus" data-up="${i}" aria-label="More">+</button></span></div>`).join("") + `</div><button class="log" id="plate-done">Done, ${plate.rows.length} in</button>`;      /* 0922d (A): one band around all the rows; Done under them */
+  const rc = !plate.rows.length ? "" : q ? foldRow("rc-fold", rcFoldWords(plate.rows.length), rcFoldSub(plate.rows), rcOpen) + (rcOpen ? rows : "") : `<div class="sect rc">In the recipe</div>` + rows;      /* the recipe sits first; with letters in the field it folds to one row (X) */
+  R.innerHTML = rc + html;
+  R.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { plate.rows.unshift(plateRow(findItem(b.dataset.add), 1)); $("find").value = ""; renderAddHead(); renderPicker(); window.scrollTo(0, 0); });      /* 0922d: the new row is at the top now, so the page goes there */
   R.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openIng(+b.dataset.open));
   { const f = $("pk-fold"); if (f) f.onclick = () => { pickOpen = !pickOpen; renderPicker(); }; }
+  { const f = $("rc-fold"); if (f) f.onclick = () => { rcOpen = !rcOpen; renderPicker(); }; }
   { const pt = $("pk-type"), ps = $("pk-snap"); if (pt) pt.onclick = () => { plate.adding = true; openSheet({ mode: "typed", name: $("find").value.trim() }); }; if (ps) ps.onclick = () => { if (!codeOk(codeGet())) return openCode(); plate.adding = true; snap = null; $("snap-file").click(); }; }      /* 0921z: a sheet opened from here is for the recipe */
   const nudge = (i, dir) => { const r = plate.rows[i]; r.amount = plateStep(r.amount, dir); $("rs-" + i).textContent = rowSub(r); $("plate-sub").textContent = plateHead(plate.rows); R.querySelector(`[data-dn="${i}"]`).disabled = r.amount <= 0.5; };   // in place: nothing redraws under the finger
   R.querySelectorAll("[data-dn]").forEach(b => b.onclick = () => nudge(+b.dataset.dn, -1));
   R.querySelectorAll("[data-up]").forEach(b => b.onclick = () => nudge(+b.dataset.up, 1));
-  $("plate-done").onclick = () => plate.editing ? backToManage() : openSheet({ mode: "plate" });
+  { const dn = $("plate-done"); if (dn) dn.onclick = () => plate.editing ? backToManage() : openSheet({ mode: "plate" }); }      /* 0922d: no Done while the recipe is empty or folded */
 }
 function openIng(i) {
   plate.scrollY = window.scrollY || 0;
