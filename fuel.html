@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0924a · a fuel log, not a diet app.
+  Fuel · build 0924b · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -375,7 +375,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0924a", BUILD_DATE = "Sep 24, 2026";
+const BUILD = "0924b", BUILD_DATE = "Sep 24, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -656,12 +656,13 @@ function pickerMissWords(q) { return "Nothing called \u201c" + String(q == null 
 function wrapNutTail(d) { return d.n && d.gaps === d.n && !d.v ? "" : " a day"; }      /* 0921y: "a day" follows an average; "no number" is not one (the owner's glass, IMG_3456) */
 /* 0924a: SHARE CARDS, the day card (ruled D on bigday-frame3.png by the son; the door A; the sheet P). The words are pure; the picture is the canvas's. */
 function cardDateWords(k) { return keyDate(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }); }
-function cardClockWords(es) { if (!es || !es.length) return ""; if (es.length === 1) return "One entry, at " + clock(es[0].t); return "First entry " + clock(es[0].t) + ", last " + clock(es[es.length - 1].t) + " \u00b7 " + es.length + " entries"; }
+function cardClockWords(es, now) { if (!es || !es.length) return ""; const tail = now ? " \u00b7 as of " + clock(now) : ""; if (es.length === 1) return "One entry, at " + clock(es[0].t) + tail; return "First entry " + clock(es[0].t) + ", last " + clock(es[es.length - 1].t) + " \u00b7 " + es.length + " entries" + tail; }      /* 0924b (B): THE TENSE FLIPS WHOLE — a card of today says when it was true; a finished day's does not */
 function cardNums(tot) { return { kcal: fmt(tot.kcal || 0), p: fmt(tot.p || 0), c: fmt(tot.c || 0), f: fmt(tot.f || 0) }; }
+function cardFit(size, width, max) { return width > max ? Math.floor(size * max / width * 10) / 10 : size; }      /* 0924b: a line wider than the safe width is set smaller, never cut, never past the edge */
 function cardFileName(k) { return "fuel-" + k + ".png"; }
 const CARD_FINE = "A picture of this day. It leaves your phone only through the share sheet, by your hand.";
 const CARD_LAYOUT = { w: 1080, h: 1350, ink: "#f1ede4", quiet: "#b3b0a7", acc: "#ff7a2e", date: { y: 36, size: 34, ls: 0.16 }, big: { y: 150, size: 400, unit: 136 }, word: { y: 555, size: 96, ls: 0.22 }, rule: { y: 690, x1: 230, x2: 850, h: 4 },
-  cells: [{ x: 75, w: 350 }, { x: 425, w: 290 }, { x: 715, w: 285 }], cellY: 800, cellH: 330, cell: { v: 112, u: 52, k: 36 }, clock: { y: 1210, size: 36 }, fuel: { y: 1268, size: 44, ls: 0.06 } };      /* the mock's own numbers (make-bigday-frame3.py, D) */
+  cells: [{ x: 75, w: 350 }, { x: 425, w: 290 }, { x: 715, w: 285 }], cellY: 800, cellH: 330, cell: { v: 112, u: 52, k: 36 }, clock: { y: 1210, size: 36 }, pad: 84, fuel: { y: 1268, size: 44, ls: 0.06 } };      /* the mock's own numbers (make-bigday-frame3.py, D) */
 /* @fuel:pure:end */
 
 /* ================= the starter pantry — USDA SR28 via fuel-pantry-seed.json; change both together ================= */
@@ -1238,7 +1239,7 @@ $("export").onclick = async () => {
   const fname = "fuel-" + dayKey(new Date()) + ".json";
   try {
     const file = new File([text], fname, { type: "application/json" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Fuel export" }); return; }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
   } catch (e) { if (e && e.name === "AbortError") return; }
   const a = document.createElement("a"); a.href = "data:application/json;charset=utf-8," + encodeURIComponent(text); a.download = fname; document.body.appendChild(a); a.click(); a.remove();
 };
@@ -1251,9 +1252,9 @@ function cardFonts() { const L = CARD_LAYOUT, want = ["800 " + L.big.size + "px 
   return document.fonts && document.fonts.load ? Promise.all(want.map(f => document.fonts.load(f))).catch(() => {}) : Promise.resolve(); }
 function cardRun(ctx, runs, x, y, align, ls) {                                                   /* runs: [{ t, font, color }]; ls: letter spacing in px, drawn glyph by glyph so every phone spaces alike. The baseline factors and the ls/2 shifts below are measured against the mock's D pixels (make-0924a-still.py), not guessed */
   const width = r => { ctx.font = r.font; return (r.pad || 0) + (ls ? [...r.t].reduce((w, ch) => w + ctx.measureText(ch).width + ls, 0) - ls : ctx.measureText(r.t).width); };      /* pad: the mock's margin before a run (the unit's .1em) */
-  const total = runs.reduce((w, r) => w + width(r), 0); let cx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+  const total = runs.reduce((w, r) => w + width(r), 0); if (align === "measure") return total; let cx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
   runs.forEach(r => { ctx.font = r.font; ctx.fillStyle = r.color; cx += r.pad || 0; if (ls) { [...r.t].forEach(ch => { ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + ls; }); } else { ctx.fillText(r.t, cx, y); cx += ctx.measureText(r.t).width; } }); }
-function drawDayCard(cv, img, k, es, tot) {
+function drawDayCard(cv, img, k, es, tot, now) {
   const ctx = cv.getContext("2d"); if (!ctx) return false; const L = CARD_LAYOUT, N = cardNums(tot), FD = "Bricolage, system-ui, sans-serif", FB = "Instrument, system-ui, sans-serif";
   cv.width = L.w; cv.height = L.h; ctx.drawImage(img, 0, 0, L.w, L.h); ctx.textBaseline = "alphabetic";
   cardRun(ctx, [{ t: cardDateWords(k).toUpperCase(), font: "700 " + L.date.size + "px " + FD, color: L.quiet }], L.w / 2 - L.date.size * L.date.ls / 2, L.date.y + L.date.size * 0.98, "center", L.date.size * L.date.ls);
@@ -1264,7 +1265,8 @@ function drawDayCard(cv, img, k, es, tot) {
     cardRun(ctx, [{ t: v, font: "800 " + L.cell.v + "px " + FD, color: L.ink }], cx, top + L.cell.v * 0.795, "center", 0);
     cardRun(ctx, [{ t: u, font: "600 " + L.cell.u + "px " + FD, color: L.acc }], cx, top + L.cell.v + 6 + L.cell.u * 0.88, "center", 0);
     cardRun(ctx, [{ t: kw, font: "400 " + L.cell.k + "px " + FB, color: L.quiet }], cx, top + L.cell.v + 6 + L.cell.u + 8 + L.cell.k * 0.9, "center", 0); });
-  const cw = cardClockWords(es), parts = cw.split(/(\d{1,2}:\d{2} [AP]M)/); cardRun(ctx, parts.filter(p => p).map(p => ({ t: p, font: (/^\d{1,2}:\d{2} [AP]M$/.test(p) ? "500 " : "400 ") + L.clock.size + "px " + FB, color: /^\d{1,2}:\d{2} [AP]M$/.test(p) ? L.ink : L.quiet })), L.w / 2, L.clock.y + L.clock.size * 0.967, "center", 0);
+  const cw = cardClockWords(es, now), parts = cw.split(/(\d{1,2}:\d{2} [AP]M)/), clockRuns = sz => parts.filter(p => p).map(p => ({ t: p, font: (/^\d{1,2}:\d{2} [AP]M$/.test(p) ? "500 " : "400 ") + sz + "px " + FB, color: /^\d{1,2}:\d{2} [AP]M$/.test(p) ? L.ink : L.quiet }));
+  const cs = cardFit(L.clock.size, cardRun(ctx, clockRuns(L.clock.size), 0, 0, "measure", 0), L.w - 2 * L.pad); cardRun(ctx, clockRuns(cs), L.w / 2, L.clock.y + L.clock.size * 0.967, "center", 0);
   cardRun(ctx, [{ t: "FUEL", font: "800 " + L.fuel.size + "px " + FD, color: L.ink }, { t: ".", font: "800 " + L.fuel.size + "px " + FD, color: L.acc }], L.w / 2 - L.fuel.size * L.fuel.ls / 2, L.fuel.y + L.fuel.size * 0.95, "center", L.fuel.size * L.fuel.ls);
   return true; }
 function openShare(k, es, tot) {
@@ -1274,12 +1276,12 @@ function openShare(k, es, tot) {
   const foot = document.createElement("div"); foot.className = "sharefoot"; foot.innerHTML = `<button class="log" id="share-go" disabled>Share</button><p class="fine">${CARD_FINE}</p>`; $("sheet").insertAdjacentElement("afterend", foot);
   const mine = () => sheet && sheet.mode === "share" && sheet.day === k, cant = () => { const w = $("card-wait"); if (w) w.textContent = "This phone couldn\u2019t draw the card."; };
   const img = new Image();
-  img.onload = () => { if (!mine()) return; const cv = document.createElement("canvas"); if (!drawDayCard(cv, img, k, es, tot)) return cant(); $("sheet").replaceChildren(cv);
+  img.onload = () => { if (!mine()) return; const cv = document.createElement("canvas"); if (!drawDayCard(cv, img, k, es, tot, k === dayKey(new Date()) ? new Date() : null)) return cant(); $("sheet").replaceChildren(cv);
     cv.toBlob(b => { if (!mine()) return; sheet.blob = b || null; const g = $("share-go"); if (g) g.disabled = !b; }, "image/png"); };
   img.onerror = () => { if (mine()) cant(); };
   cardFonts().then(() => { if (mine()) img.src = CARD_TPL; });
   $("share-go").onclick = async () => { const b = sheet && sheet.blob; if (!b) return; const file = new File([b], cardFileName(k), { type: "image/png" });      /* the bytes are already made: nothing slow between the tap and the sheet */
-    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: cardDateWords(k) }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); }; }
 
 /* ================= go ================= */
