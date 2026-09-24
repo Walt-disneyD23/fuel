@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
 <title>Fuel</title>
 <!--
-  Fuel · build 0922e · a fuel log, not a diet app.
+  Fuel · build 0922f · a fuel log, not a diet app.
   Type: Bricolage Grotesque (c) 2023 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
         Instrument Sans (c) 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
   Both under the SIL Open Font License 1.1 (https://openfontlicense.org), subset and embedded here.
@@ -369,7 +369,7 @@ nav.bar button.add[aria-current=page] span.lbl { color:var(--ink); }
 
 <script>
 "use strict";
-const BUILD = "0922e", BUILD_DATE = "Sep 23, 2026";
+const BUILD = "0922f", BUILD_DATE = "Sep 23, 2026";
 
 /* ================= pure arithmetic — the harness extracts this block verbatim ================= */
 /* @fuel:pure */
@@ -402,6 +402,7 @@ function readLine(tot, tg, now) {
   return pace + " " + fmt(tg.p - tot.p) + " g protein to go, and it's " + hourWord(now) + "." + overClause;
 }
 function toGoLine(tot, tg) { const d = tg.kcal - tot.kcal; return d >= 0 ? { lead: fmt(d) + " to go", tail: "of " + fmt(tg.kcal) } : { lead: fmt(-d) + " over", tail: fmt(tg.kcal) }; }
+function inkWords(s) { return String(s).replace(/^at least /, "<span>at least</span> ").replace(/ of ([\d,.]+ (?:mg|mcg|g))(,?)(?= |$)/, " <span>of $1$2</span>"); }      /* 0922f (A): TWO INKS — what you ate in ink; "of <target>" and "at least" in the quiet ink the calorie line already uses; over stays a number in ink. The words are unchanged. */
 function macroVal(v, t) { return fmt(v) + " g of " + fmt(t) + " g" + (v > t ? ", " + fmt(v - t) + " over" : ""); }
 /* THE PANTRY IS TWO THINGS (0922a; ruled Sep 22 on the owner's Save-a-copy: A + R1, C, B). The clock reads the ENTRIES that exist, never the tap log (`used`): a deleted entry is not a use. */
 const AROUND_MIN = 120;                                                            /* B: "Around this time" is a past entry within two hours of now, on any day */
@@ -727,19 +728,19 @@ function nutOn() { return nutState().on.filter(k => nutOf(k)).slice(0, NUT_MAX);
 function nutTarget(k) { return Math.max(0, Math.round(+nutState().targets[k] || 0)); }
 function nutRows(es, past) {                                                                      /* A3: rows without a track, then one gap line for all of them */
   const on = nutOn(); if (!on.length) return ""; const ds = on.map(k => Object.assign({ key: k }, dayNut(es, k)));
-  return ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${nutVal(d, nutTarget(d.key), nutOf(d.key).unit, past)}</span></div></div>`).join("") + (nutGapLine(ds, past) ? `<div class="netline">${esc(nutGapLine(ds, past))}</div>` : "");
+  return ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${inkWords(nutVal(d, nutTarget(d.key), nutOf(d.key).unit, past))}</span></div></div>`).join("") + (nutGapLine(ds, past) ? `<div class="netline">${esc(nutGapLine(ds, past))}</div>` : "");
 }
 function carbBar(es, tot, tg) {                                                                     /* off: exactly the bar it always was. on: a flip, two faces, the face kept in S.carbFace */
   const t = tg.c, plain = (name, val, track, line) => `<div class="mrow"><span class="mname">${name}</span><span class="mval">${val}</span></div>${track}${line}`, one = `<div class="track"><div class="fill" style="width:${t ? Math.min(100, tot.c / t * 100) : 0}%"></div></div>`;
-  if (!netOn()) return `<div class="m">${plain("Carbs", macroVal(tot.c, t), one, "")}</div>`;
-  if (S.carbFace === "carbs") return `<div class="m flip" id="carb-flip" role="button" tabindex="0" aria-label="Carbs. Tap to show net carbs.">${plain("Carbs" + SWAP, macroVal(tot.c, t), one, "")}</div>`;
+  if (!netOn()) return `<div class="m">${plain("Carbs", inkWords(macroVal(tot.c, t)), one, "")}</div>`;
+  if (S.carbFace === "carbs") return `<div class="m flip" id="carb-flip" role="button" tabindex="0" aria-label="Carbs. Tap to show net carbs.">${plain("Carbs" + SWAP, inkWords(macroVal(tot.c, t)), one, "")}</div>`;
   const d = dayNet(es), shown = netShown(d.c, d.fiber), w = netFill(d, t), two = w.fiber > 0.05 ? `<div class="track two"><div class="fill" style="width:${w.net}%"></div><div class="fill fib" style="width:${w.fiber}%"></div></div>` : `<div class="track"><div class="fill" style="width:${w.net}%"></div></div>`;
   return `<div class="m flip" id="carb-flip" role="button" tabindex="0" aria-label="Net carbs. Tap to show carbs.">${plain("Net carbs" + SWAP, fmt(shown) + " g", two, `<div class="netline">${esc(netLine(d, t))}</div>`)}</div>`;
 }
 function renderHome() {
   const now = new Date(), tk = dayKey(now); if (viewDay === tk) viewDay = null;
   const past = viewDay, day = past || tk, es = dayEntries(day), tot = totals(es), tg = S.targets, tg2 = past ? pastGoLine(tot, tg) : toGoLine(tot, tg), read = past ? pastRead(es, tg) : readLine(tot, tg, now);
-  const bar = (name, v, t) => `<div class="m"><div class="mrow"><span class="mname">${name}</span><span class="mval">${macroVal(v, t)}</span></div><div class="track"><div class="fill" style="width:${t ? Math.min(100, v / t * 100) : 0}%"></div></div></div>`;
+  const bar = (name, v, t) => `<div class="m"><div class="mrow"><span class="mname">${name}</span><span class="mval">${inkWords(macroVal(v, t))}</span></div><div class="track"><div class="fill" style="width:${t ? Math.min(100, v / t * 100) : 0}%"></div></div></div>`;
   $("tally").innerHTML =
     `<div class="top dn"><button class="dpill" id="day-pill">${dayName(day)}${CARET}</button>${past ? "" : `<span class="tn">${clock(now)}</span>`}</div>` +
     `<div class="hero"><div class="kcal"><span class="big">${fmt(tot.kcal)}</span><span class="unit">kcal</span></div><div class="togo">${tg2.lead ? `<strong>${tg2.lead}</strong> ` : ""}${tg2.tail}</div></div>` +
@@ -795,7 +796,7 @@ function renderWrap() {
   if (!w) { $("wrap").innerHTML = `<section class="card"><div class="read" style="margin:0">Nothing was logged.</div></section>`; return; }
   const ds = nutOn().map(k => Object.assign({ key: k }, wrapNut(days7, k)));
   $("wrap").innerHTML = `<section class="card"><div class="wt">${wrapTiles(w, tg).map(t => `<div class="wtile"><div class="wn">${esc(t[0])}</div><div class="wl">${esc(t[1])}</div></div>`).join("")}</div>` +
-    ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${nutVal(d, nutTarget(d.key), nutOf(d.key).unit, true)}${wrapNutTail(d) ? `<span>${wrapNutTail(d)}</span>` : ""}</span></div></div>`).join("") + (nutGapLine(ds, true) ? `<div class="netline">${esc(nutGapLine(ds, true))}</div>` : "") +
+    ds.map(d => `<div class="m flat"><div class="mrow"><span class="mname">${nutOf(d.key).name}</span><span class="mval">${inkWords(nutVal(d, nutTarget(d.key), nutOf(d.key).unit, true))}${wrapNutTail(d) ? `<span>${wrapNutTail(d)}</span>` : ""}</span></div></div>`).join("") + (nutGapLine(ds, true) ? `<div class="netline">${esc(nutGapLine(ds, true))}</div>` : "") +
     (w.foods.length ? `<div class="wsub">Logged most</div>` + w.foods.map(f => `<div class="wf"><span>${esc(f.name)}</span><span class="wc">${f.n}<span> times</span></span></div>`).join("") : "") + `</section>`;
 }
 $("wrap-back").onclick = () => show("days");
